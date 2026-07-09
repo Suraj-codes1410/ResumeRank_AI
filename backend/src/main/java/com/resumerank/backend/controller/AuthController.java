@@ -2,6 +2,8 @@ package com.resumerank.backend.controller;
 
 import com.resumerank.backend.dto.LoginRequest;
 import com.resumerank.backend.dto.LoginResponse;
+import com.resumerank.backend.dto.ResetPasswordRequest;
+import com.resumerank.backend.dto.ResetPasswordConfirmRequest;
 import com.resumerank.backend.dto.SignupRequest;
 import com.resumerank.backend.dto.SignupResponse;
 import com.resumerank.backend.service.AuthService;
@@ -42,6 +44,19 @@ public class AuthController {
         authService.verifyEmail(token);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/reset-password/request")
+    public ResponseEntity<Void> requestPasswordReset(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.requestPasswordReset(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reset-password/confirm")
+    public ResponseEntity<Void> confirmPasswordReset(@Valid @RequestBody ResetPasswordConfirmRequest request) {
+        authService.confirmPasswordReset(request);
+        return ResponseEntity.ok().build();
+    }
 }
+
 
 
