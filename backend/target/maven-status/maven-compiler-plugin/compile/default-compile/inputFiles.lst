@@ -1,0 +1,17 @@
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\BackendApplication.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\config\PasswordConfig.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\controller\AuthController.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\dto\LoginRequest.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\dto\LoginResponse.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\dto\SignupRequest.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\dto\SignupResponse.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\entity\EmailVerificationToken.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\entity\User.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\exception\BadCredentialsException.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\exception\EmailAlreadyExistsException.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\exception\GlobalExceptionHandler.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\exception\InvalidTokenException.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\repository\EmailVerificationTokenRepository.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\repository\UserRepository.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\service\AuthService.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\service\JwtService.java

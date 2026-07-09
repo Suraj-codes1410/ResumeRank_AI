@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.resumerank.backend.controller.AuthControllerTest
+-------------------------------------------------------------------------------
+Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.584 s -- in com.resumerank.backend.controller.AuthControllerTest
