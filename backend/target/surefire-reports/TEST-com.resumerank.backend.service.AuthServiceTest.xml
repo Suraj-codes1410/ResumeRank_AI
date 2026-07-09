@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.resumerank.backend.controller.AuthControllerTest" time="6.29" tests="15" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.resumerank.backend.service.AuthServiceTest" time="0.55" tests="5" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="21"/>
     <property name="sun.cpu.isalist" value="amd64"/>
@@ -64,44 +64,12 @@
     <property name="java.class.version" value="65.0"/>
     <property name="LOGGED_APPLICATION_NAME" value="[backend] "/>
   </properties>
-  <testcase name="verifyEmail_ExpiredToken_Returns400" classname="com.resumerank.backend.controller.AuthControllerTest" time="0.464">
-    <system-out><![CDATA[23:14:38.977 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.resumerank.backend.controller.AuthControllerTest]: AuthControllerTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
-23:14:39.198 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.resumerank.backend.BackendApplication for test class com.resumerank.backend.controller.AuthControllerTest
-
-  .   ____          _            __ _ _
- /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
-( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
- \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
-  '  |____| .__|_| |_|_| |_\__, | / / / /
- =========|_|==============|___/=/_/_/_/
-
- :: Spring Boot ::                (v3.3.1)
-
-2026-07-09T23:14:39.900+05:30  INFO 24460 --- [backend] [           main] c.r.b.controller.AuthControllerTest      : Starting AuthControllerTest using Java 21.0.10 with PID 24460 (started by Suraj in C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend)
-2026-07-09T23:14:39.902+05:30  INFO 24460 --- [backend] [           main] c.r.b.controller.AuthControllerTest      : No active profile set, falling back to 1 default profile: "default"
-2026-07-09T23:14:43.915+05:30  INFO 24460 --- [backend] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
-2026-07-09T23:14:43.915+05:30  INFO 24460 --- [backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2026-07-09T23:14:43.921+05:30  INFO 24460 --- [backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
-2026-07-09T23:14:43.992+05:30  INFO 24460 --- [backend] [           main] c.r.b.controller.AuthControllerTest      : Started AuthControllerTest in 4.67 seconds (process running for 6.223)
+  <testcase name="requestPasswordReset_ExistingEmail_GeneratesTokenRecord" classname="com.resumerank.backend.service.AuthServiceTest" time="0.528">
+    <system-out><![CDATA[Password reset link for user@example.com: http://localhost:8081/api/auth/reset-password/confirm?token=tF-8UZrZA8HwpBT-djPnLDmWJcBR3blRrvB_uyHeE9g
 ]]></system-out>
-    <system-err><![CDATA[WARNING: A Java agent has been loaded dynamically (C:\Users\Suraj\.m2\repository\net\bytebuddy\byte-buddy-agent\1.14.17\byte-buddy-agent-1.14.17.jar)
-WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
-WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
-WARNING: Dynamic loading of agents will be disallowed by default in a future release
-]]></system-err>
   </testcase>
-  <testcase name="login_WrongPassword_Returns401WithGenericMessage" classname="com.resumerank.backend.controller.AuthControllerTest" time="0.259"/>
-  <testcase name="verifyEmail_UsedToken_Returns400" classname="com.resumerank.backend.controller.AuthControllerTest" time="0.006"/>
-  <testcase name="login_ValidCredentials_Returns200WithTokens" classname="com.resumerank.backend.controller.AuthControllerTest" time="0.031"/>
-  <testcase name="signup_PasswordTooShort_Returns400" classname="com.resumerank.backend.controller.AuthControllerTest" time="0.05"/>
-  <testcase name="confirmPasswordReset_Successful_Returns200" classname="com.resumerank.backend.controller.AuthControllerTest" time="0.017"/>
-  <testcase name="signup_InvalidEmailFormat_Returns400" classname="com.resumerank.backend.controller.AuthControllerTest" time="0.001"/>
-  <testcase name="requestPasswordReset_Returns200" classname="com.resumerank.backend.controller.AuthControllerTest" time="0.023"/>
-  <testcase name="confirmPasswordReset_WeakPassword_Returns400" classname="com.resumerank.backend.controller.AuthControllerTest" time="0.007"/>
-  <testcase name="confirmPasswordReset_InvalidToken_Returns400" classname="com.resumerank.backend.controller.AuthControllerTest" time="0.0"/>
-  <testcase name="login_UnverifiedUser_ReturnsEmailVerifiedFalse" classname="com.resumerank.backend.controller.AuthControllerTest" time="0.014"/>
-  <testcase name="signup_Successful_Returns201" classname="com.resumerank.backend.controller.AuthControllerTest" time="0.015"/>
-  <testcase name="login_NonexistentEmail_ReturnsIdentical401" classname="com.resumerank.backend.controller.AuthControllerTest" time="0.021"/>
-  <testcase name="verifyEmail_ValidToken_Returns200" classname="com.resumerank.backend.controller.AuthControllerTest" time="0.006"/>
-  <testcase name="signup_DuplicateEmail_Returns409" classname="com.resumerank.backend.controller.AuthControllerTest" time="0.004"/>
+  <testcase name="confirmPasswordReset_ValidToken_UpdatesPasswordAndInvalidatesToken" classname="com.resumerank.backend.service.AuthServiceTest" time="0.007"/>
+  <testcase name="confirmPasswordReset_ExpiredToken_ThrowsException" classname="com.resumerank.backend.service.AuthServiceTest" time="0.006"/>
+  <testcase name="confirmPasswordReset_UsedToken_ThrowsException" classname="com.resumerank.backend.service.AuthServiceTest" time="0.004"/>
+  <testcase name="requestPasswordReset_NonexistentEmail_DoesNotGenerateTokenRecord" classname="com.resumerank.backend.service.AuthServiceTest" time="0.003"/>
 </testsuite>
