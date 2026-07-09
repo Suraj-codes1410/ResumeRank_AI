@@ -185,6 +185,56 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.refreshToken").value("refreshToken123"))
                 .andExpect(jsonPath("$.emailVerified").value(false));
     }
+
+    @Test
+    void requestPasswordReset_Returns200() throws Exception {
+        com.resumerank.backend.dto.ResetPasswordRequest request = new com.resumerank.backend.dto.ResetPasswordRequest("user@example.com");
+
+        Mockito.doNothing().when(authService).requestPasswordReset(any(com.resumerank.backend.dto.ResetPasswordRequest.class));
+
+        mockMvc.perform(post("/api/auth/reset-password/request")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void confirmPasswordReset_Successful_Returns200() throws Exception {
+        com.resumerank.backend.dto.ResetPasswordConfirmRequest request = new com.resumerank.backend.dto.ResetPasswordConfirmRequest("token123", "newPassword123");
+
+        Mockito.doNothing().when(authService).confirmPasswordReset(any(com.resumerank.backend.dto.ResetPasswordConfirmRequest.class));
+
+        mockMvc.perform(post("/api/auth/reset-password/confirm")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void confirmPasswordReset_InvalidToken_Returns400() throws Exception {
+        com.resumerank.backend.dto.ResetPasswordConfirmRequest request = new com.resumerank.backend.dto.ResetPasswordConfirmRequest("invalid-token", "newPassword123");
+
+        Mockito.doThrow(new com.resumerank.backend.exception.InvalidTokenException("Invalid or nonexistent token"))
+                .when(authService).confirmPasswordReset(any(com.resumerank.backend.dto.ResetPasswordConfirmRequest.class));
+
+        mockMvc.perform(post("/api/auth/reset-password/confirm")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Invalid or nonexistent token"));
+    }
+
+    @Test
+    void confirmPasswordReset_WeakPassword_Returns400() throws Exception {
+        com.resumerank.backend.dto.ResetPasswordConfirmRequest request = new com.resumerank.backend.dto.ResetPasswordConfirmRequest("token123", "short");
+
+        mockMvc.perform(post("/api/auth/reset-password/confirm")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("newPassword: Password must be at least 8 characters long")));
+    }
 }
+
 
 
