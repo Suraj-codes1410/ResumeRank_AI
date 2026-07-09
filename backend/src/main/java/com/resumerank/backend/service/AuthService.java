@@ -2,14 +2,18 @@ package com.resumerank.backend.service;
 
 import com.resumerank.backend.dto.LoginRequest;
 import com.resumerank.backend.dto.LoginResponse;
+import com.resumerank.backend.dto.ResetPasswordRequest;
+import com.resumerank.backend.dto.ResetPasswordConfirmRequest;
 import com.resumerank.backend.dto.SignupRequest;
 import com.resumerank.backend.dto.SignupResponse;
 import com.resumerank.backend.entity.EmailVerificationToken;
+import com.resumerank.backend.entity.PasswordResetToken;
 import com.resumerank.backend.entity.User;
 import com.resumerank.backend.exception.BadCredentialsException;
 import com.resumerank.backend.exception.EmailAlreadyExistsException;
 import com.resumerank.backend.exception.InvalidTokenException;
 import com.resumerank.backend.repository.EmailVerificationTokenRepository;
+import com.resumerank.backend.repository.PasswordResetTokenRepository;
 import com.resumerank.backend.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,6 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.OffsetDateTime;
 import java.util.Base64;
 import java.security.SecureRandom;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.nio.charset.StandardCharsets;
 
 @Service
 public class AuthService {
@@ -25,15 +32,18 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     public AuthService(UserRepository userRepository, 
                       PasswordEncoder passwordEncoder, 
                       JwtService jwtService,
-                      EmailVerificationTokenRepository emailVerificationTokenRepository) {
+                      EmailVerificationTokenRepository emailVerificationTokenRepository,
+                      PasswordResetTokenRepository passwordResetTokenRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.emailVerificationTokenRepository = emailVerificationTokenRepository;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
     }
 
     @Transactional
@@ -105,11 +115,73 @@ public class AuthService {
         emailVerificationTokenRepository.save(verificationToken);
     }
 
+    @Transactional
+    public void requestPasswordReset(ResetPasswordRequest request) {
+        java.util.Optional<User> userOpt = userRepository.findByEmail(request.email());
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            String rawToken = generateOpaqueToken();
+            String tokenHash = hashToken(rawToken);
+
+            PasswordResetToken resetToken = new PasswordResetToken();
+            resetToken.setUser(user);
+            resetToken.setTokenHash(tokenHash);
+            resetToken.setExpiresAt(OffsetDateTime.now().plusMinutes(20)); // 20 min expiry
+            resetToken.setUsed(false);
+            passwordResetTokenRepository.save(resetToken);
+
+            // Log the reset link to console output (actual sending is out of scope for now)
+            String resetLink = "http://localhost:8081/api/auth/reset-password/confirm?token=" + rawToken;
+            System.out.println("Password reset link for " + user.getEmail() + ": " + resetLink);
+        }
+    }
+
+    @Transactional
+    public void confirmPasswordReset(ResetPasswordConfirmRequest request) {
+        String tokenHash = hashToken(request.token());
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByTokenHash(tokenHash)
+                .orElseThrow(() -> new InvalidTokenException("Invalid or nonexistent token"));
+
+        if (resetToken.getUsed()) {
+            throw new InvalidTokenException("Token has already been used");
+        }
+
+        if (resetToken.getExpiresAt().isBefore(OffsetDateTime.now())) {
+            throw new InvalidTokenException("Token has expired");
+        }
+
+        User user = resetToken.getUser();
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+
+        resetToken.setUsed(true);
+        passwordResetTokenRepository.save(resetToken);
+    }
+
     private String generateOpaqueToken() {
         byte[] randomBytes = new byte[32];
         new SecureRandom().nextBytes(randomBytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
     }
+
+    private String hashToken(String token) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("SHA-256 algorithm not found", e);
+        }
+    }
 }
+
 
 
