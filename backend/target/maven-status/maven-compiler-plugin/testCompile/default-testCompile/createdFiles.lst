@@ -1,4 +1,5 @@
 com\resumerank\backend\config\RateLimiterIntegrationTest.class
+com\resumerank\backend\service\JobPostingServiceTest.class
 com\resumerank\backend\controller\JobPostingControllerTest.class
 com\resumerank\backend\service\AuthServiceTest.class
 com\resumerank\backend\controller\AuthControllerTest.class

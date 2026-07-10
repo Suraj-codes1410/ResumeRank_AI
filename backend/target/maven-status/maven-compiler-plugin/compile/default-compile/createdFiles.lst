@@ -1,3 +1,4 @@
+com\resumerank\backend\dto\JobPostingListResponse.class
 com\resumerank\backend\dto\LoginResponse.class
 com\resumerank\backend\controller\JobPostingController.class
 com\resumerank\backend\repository\JobPostingRepository.class
@@ -25,6 +26,7 @@ com\resumerank\backend\exception\BadCredentialsException.class
 com\resumerank\backend\entity\JobPostingStatus.class
 com\resumerank\backend\exception\InvalidTokenException.class
 com\resumerank\backend\service\AuthService.class
+com\resumerank\backend\exception\ResourceNotFoundException.class
 com\resumerank\backend\config\RateLimitConfig.class
 com\resumerank\backend\entity\EmailVerificationToken.class
 com\resumerank\backend\exception\EmailAlreadyExistsException.class

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.resumerank.backend.controller.JobPostingControllerTest" time="0.49" tests="9" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.resumerank.backend.service.JobPostingServiceTest" time="0.068" tests="8" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="21"/>
     <property name="sun.cpu.isalist" value="amd64"/>
@@ -64,33 +64,23 @@
     <property name="java.class.version" value="65.0"/>
     <property name="LOGGED_APPLICATION_NAME" value="[backend] "/>
   </properties>
-  <testcase name="createJobPosting_MissingTitle_Returns400" classname="com.resumerank.backend.controller.JobPostingControllerTest" time="0.19">
-    <system-out><![CDATA[2026-07-10T23:26:10.300+05:30  INFO 19036 --- [backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.resumerank.backend.controller.JobPostingControllerTest]: JobPostingControllerTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
-2026-07-10T23:26:10.307+05:30  INFO 19036 --- [backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.resumerank.backend.BackendApplication for test class com.resumerank.backend.controller.JobPostingControllerTest
-
-  .   ____          _            __ _ _
- /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
-( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
- \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
-  '  |____| .__|_| |_|_| |_\__, | / / / /
- =========|_|==============|___/=/_/_/_/
-
- :: Spring Boot ::                (v3.3.1)
-
-2026-07-10T23:26:10.325+05:30  INFO 19036 --- [backend] [           main] c.r.b.c.JobPostingControllerTest         : Starting JobPostingControllerTest using Java 21.0.10 with PID 19036 (started by Suraj in C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend)
-2026-07-10T23:26:10.325+05:30  INFO 19036 --- [backend] [           main] c.r.b.c.JobPostingControllerTest         : No active profile set, falling back to 1 default profile: "default"
-2026-07-10T23:26:10.531+05:30  INFO 19036 --- [backend] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
-2026-07-10T23:26:10.531+05:30  INFO 19036 --- [backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2026-07-10T23:26:10.532+05:30  INFO 19036 --- [backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
-2026-07-10T23:26:10.533+05:30  INFO 19036 --- [backend] [           main] c.r.b.c.JobPostingControllerTest         : Started JobPostingControllerTest in 0.224 seconds (process running for 3.781)
+  <testcase name="getJobPosting_NotOwn_ThrowsResourceNotFoundException" classname="com.resumerank.backend.service.JobPostingServiceTest" time="0.051">
+    <system-out><![CDATA[[DEBUG] getJobPosting - Requested ID: f0637838-37be-4a3e-9758-12bc8134e217
+[DEBUG] getJobPosting - Token User ID: b29bd9dd-4fdb-4d4d-b3ab-0d1514155a7a
+[DEBUG] getJobPosting - Record found in DB! Owner User ID: b2d2c3c6-0ff8-4900-af3c-13ad3b928f31
+[DEBUG] getJobPosting - Owner ID mismatch! Access Denied (returning 404).
 ]]></system-out>
   </testcase>
-  <testcase name="patchJobPosting_NotOwn_Returns404" classname="com.resumerank.backend.controller.JobPostingControllerTest" time="0.006"/>
-  <testcase name="getJobPosting_NonexistentOrNotOwn_ReturnsIdentical404" classname="com.resumerank.backend.controller.JobPostingControllerTest" time="0.013"/>
-  <testcase name="createJobPosting_NoToken_Returns401" classname="com.resumerank.backend.controller.JobPostingControllerTest" time="0.004"/>
-  <testcase name="patchJobPosting_Own_Returns200" classname="com.resumerank.backend.controller.JobPostingControllerTest" time="0.007"/>
-  <testcase name="createJobPosting_Authenticated_Returns201" classname="com.resumerank.backend.controller.JobPostingControllerTest" time="0.007"/>
-  <testcase name="getJobPosting_Own_Returns200" classname="com.resumerank.backend.controller.JobPostingControllerTest" time="0.004"/>
-  <testcase name="createJobPosting_WithDifferentUserIdInBody_StillUsesAuthenticatedUserId" classname="com.resumerank.backend.controller.JobPostingControllerTest" time="0.01"/>
-  <testcase name="listJobPostings_Authenticated_Returns200WithList" classname="com.resumerank.backend.controller.JobPostingControllerTest" time="0.01"/>
+  <testcase name="listJobPostings_ClampsSize" classname="com.resumerank.backend.service.JobPostingServiceTest" time="0.006"/>
+  <testcase name="updateJobPosting_Own_UpdatesFieldsAndUpdatedAtChanges" classname="com.resumerank.backend.service.JobPostingServiceTest" time="0.002"/>
+  <testcase name="listJobPostings_StatusFilter" classname="com.resumerank.backend.service.JobPostingServiceTest" time="0.001"/>
+  <testcase name="listJobPostings_OwnerIsolation" classname="com.resumerank.backend.service.JobPostingServiceTest" time="0.002"/>
+  <testcase name="updateJobPosting_NotOwn_ThrowsResourceNotFoundExceptionAndDoesNotSave" classname="com.resumerank.backend.service.JobPostingServiceTest" time="0.001"/>
+  <testcase name="listJobPostings_Pagination" classname="com.resumerank.backend.service.JobPostingServiceTest" time="0.002"/>
+  <testcase name="getJobPosting_Own_ReturnsPosting" classname="com.resumerank.backend.service.JobPostingServiceTest" time="0.0">
+    <system-out><![CDATA[[DEBUG] getJobPosting - Requested ID: 4cbe5a67-eb39-4893-86e5-5ecd8d83e5cb
+[DEBUG] getJobPosting - Token User ID: 8dee2cb2-d9ef-4ba0-959c-293251a8f11d
+[DEBUG] getJobPosting - Record found in DB! Owner User ID: 8dee2cb2-d9ef-4ba0-959c-293251a8f11d
+]]></system-out>
+  </testcase>
 </testsuite>
