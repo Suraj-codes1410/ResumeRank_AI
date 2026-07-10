@@ -25,4 +25,9 @@ vi.mock('next/font/google', () => ({
     variable: '--font-inter',
     style: { fontFamily: 'Inter' },
   }),
+  JetBrains_Mono: () => ({
+    className: 'mock-mono',
+    variable: '--font-mono',
+    style: { fontFamily: 'JetBrains_Mono' },
+  }),
 }));
