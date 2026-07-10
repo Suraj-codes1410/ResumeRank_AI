@@ -6,6 +6,7 @@ import com.resumerank.backend.dto.ResetPasswordRequest;
 import com.resumerank.backend.dto.ResetPasswordConfirmRequest;
 import com.resumerank.backend.dto.SignupRequest;
 import com.resumerank.backend.dto.SignupResponse;
+import com.resumerank.backend.dto.TokenRefreshRequest;
 import com.resumerank.backend.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -39,6 +40,12 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/refresh")
+    public ResponseEntity<LoginResponse> refresh(@Valid @RequestBody TokenRefreshRequest request) {
+        LoginResponse response = authService.refresh(request);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/verify-email")
     public ResponseEntity<Void> verifyEmail(@RequestParam("token") String token) {
         authService.verifyEmail(token);
@@ -57,6 +64,7 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 }
+
 
 
 

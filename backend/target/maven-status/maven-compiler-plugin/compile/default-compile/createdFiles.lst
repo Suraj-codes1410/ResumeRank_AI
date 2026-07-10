@@ -6,6 +6,7 @@ com\resumerank\backend\controller\AuthController.class
 com\resumerank\backend\BackendApplication.class
 com\resumerank\backend\repository\EmailVerificationTokenRepository.class
 com\resumerank\backend\repository\PasswordResetTokenRepository.class
+com\resumerank\backend\entity\JobPosting.class
 com\resumerank\backend\entity\User.class
 com\resumerank\backend\service\JwtService.class
 com\resumerank\backend\repository\UserRepository.class
@@ -14,6 +15,7 @@ com\resumerank\backend\dto\ResetPasswordRequest.class
 com\resumerank\backend\dto\LoginRequest.class
 com\resumerank\backend\dto\ResetPasswordConfirmRequest.class
 com\resumerank\backend\exception\BadCredentialsException.class
+com\resumerank\backend\entity\JobPostingStatus.class
 com\resumerank\backend\exception\InvalidTokenException.class
 com\resumerank\backend\service\AuthService.class
 com\resumerank\backend\config\RateLimitConfig.class
@@ -22,5 +24,7 @@ com\resumerank\backend\exception\EmailAlreadyExistsException.class
 com\resumerank\backend\entity\PasswordResetToken.class
 com\resumerank\backend\config\CachedBodyHttpServletRequest.class
 com\resumerank\backend\dto\SignupResponse.class
+com\resumerank\backend\dto\TokenRefreshRequest.class
 com\resumerank\backend\config\CachedBodyServletInputStream.class
 com\resumerank\backend\config\RateLimiter.class
+com\resumerank\backend\entity\SeniorityLevel.class

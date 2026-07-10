@@ -3,14 +3,14 @@ import { vi } from 'vitest';
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
-  useSearchParams: () => ({
+  useSearchParams: vi.fn(() => ({
     get: () => null,
-  }),
-  useRouter: () => ({
+  })),
+  useRouter: vi.fn(() => ({
     push: vi.fn(),
     replace: vi.fn(),
     prefetch: vi.fn(),
-  }),
+  })),
 }));
 
 // Mock next/font/google

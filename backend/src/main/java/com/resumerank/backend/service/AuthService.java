@@ -158,6 +158,29 @@ public class AuthService {
         passwordResetTokenRepository.save(resetToken);
     }
 
+    @Transactional(readOnly = true)
+    public LoginResponse refresh(com.resumerank.backend.dto.TokenRefreshRequest request) {
+        try {
+            com.auth0.jwt.interfaces.DecodedJWT decodedJWT = jwtService.verifyToken(request.refreshToken());
+            String type = decodedJWT.getClaim("type").asString();
+            if (!"refresh".equals(type)) {
+                throw new InvalidTokenException("Invalid token type");
+            }
+            
+            java.util.UUID userId = java.util.UUID.fromString(decodedJWT.getSubject());
+            
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new InvalidTokenException("User not found"));
+                    
+            String newAccessToken = jwtService.generateAccessToken(user.getId(), user.getEmail());
+            String newRefreshToken = jwtService.generateRefreshToken(user.getId(), user.getEmail());
+            
+            return new LoginResponse(newAccessToken, newRefreshToken, user.getEmailVerified());
+        } catch (Exception e) {
+            throw new InvalidTokenException("Invalid or expired refresh token");
+        }
+    }
+
     private String generateOpaqueToken() {
         byte[] randomBytes = new byte[32];
         new SecureRandom().nextBytes(randomBytes);

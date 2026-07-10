@@ -12,8 +12,12 @@ C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resume
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\dto\ResetPasswordRequest.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\dto\SignupRequest.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\dto\SignupResponse.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\dto\TokenRefreshRequest.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\entity\EmailVerificationToken.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\entity\JobPosting.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\entity\JobPostingStatus.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\entity\PasswordResetToken.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\entity\SeniorityLevel.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\entity\User.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\exception\BadCredentialsException.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\exception\EmailAlreadyExistsException.java

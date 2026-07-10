@@ -36,4 +36,11 @@ public class JwtService {
                 .withExpiresAt(Instant.now().plus(7, ChronoUnit.DAYS))
                 .sign(algorithm);
     }
+
+    public com.auth0.jwt.interfaces.DecodedJWT verifyToken(String token) {
+        return JWT.require(algorithm)
+                .build()
+                .verify(token);
+    }
 }
+
