@@ -1,4 +1,5 @@
 com\resumerank\backend\dto\LoginResponse.class
+com\resumerank\backend\config\RateLimitingFilter.class
 com\resumerank\backend\dto\SignupRequest.class
 com\resumerank\backend\exception\GlobalExceptionHandler.class
 com\resumerank\backend\controller\AuthController.class
@@ -15,7 +16,11 @@ com\resumerank\backend\dto\ResetPasswordConfirmRequest.class
 com\resumerank\backend\exception\BadCredentialsException.class
 com\resumerank\backend\exception\InvalidTokenException.class
 com\resumerank\backend\service\AuthService.class
+com\resumerank\backend\config\RateLimitConfig.class
 com\resumerank\backend\entity\EmailVerificationToken.class
 com\resumerank\backend\exception\EmailAlreadyExistsException.class
 com\resumerank\backend\entity\PasswordResetToken.class
+com\resumerank\backend\config\CachedBodyHttpServletRequest.class
 com\resumerank\backend\dto\SignupResponse.class
+com\resumerank\backend\config\CachedBodyServletInputStream.class
+com\resumerank\backend\config\RateLimiter.class

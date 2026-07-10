@@ -1,2 +1,3 @@
 com\resumerank\backend\service\AuthServiceTest.class
+com\resumerank\backend\config\RateLimiterIntegrationTest.class
 com\resumerank\backend\controller\AuthControllerTest.class
