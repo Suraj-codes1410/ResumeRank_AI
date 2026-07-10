@@ -1,0 +1,28 @@
+import '@testing-library/jest-dom';
+import { vi } from 'vitest';
+
+// Mock next/navigation
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => ({
+    get: () => null,
+  }),
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+}));
+
+// Mock next/font/google
+vi.mock('next/font/google', () => ({
+  Fraunces: () => ({
+    className: 'mock-fraunces',
+    variable: '--font-fraunces',
+    style: { fontFamily: 'Fraunces' },
+  }),
+  Inter: () => ({
+    className: 'mock-inter',
+    variable: '--font-inter',
+    style: { fontFamily: 'Inter' },
+  }),
+}));
