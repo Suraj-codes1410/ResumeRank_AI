@@ -1,11 +1,16 @@
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\BackendApplication.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\config\CachedBodyHttpServletRequest.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\config\CachedBodyServletInputStream.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\config\JwtInterceptor.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\config\PasswordConfig.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\config\RateLimitConfig.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\config\RateLimiter.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\config\RateLimitingFilter.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\config\WebMvcConfig.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\controller\AuthController.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\controller\JobPostingController.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\dto\JobPostingCreateRequest.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\dto\JobPostingResponse.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\dto\LoginRequest.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\dto\LoginResponse.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\dto\ResetPasswordConfirmRequest.java
@@ -24,7 +29,9 @@ C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resume
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\exception\GlobalExceptionHandler.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\exception\InvalidTokenException.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\repository\EmailVerificationTokenRepository.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\repository\JobPostingRepository.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\repository\PasswordResetTokenRepository.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\repository\UserRepository.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\service\AuthService.java
+C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\service\JobPostingService.java
 C:\Users\Suraj\Desktop\ResumeRank\ResumeRank_AI\backend\src\main\java\com\resumerank\backend\service\JwtService.java
