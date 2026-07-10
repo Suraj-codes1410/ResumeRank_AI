@@ -187,4 +187,167 @@ class JobPostingControllerTest {
                 .andExpect(jsonPath("$.userId").value(mockUserId.toString()))
                 .andExpect(jsonPath("$.userId").value(org.hamcrest.Matchers.not(attackerUserId.toString())));
     }
+
+    @Test
+    void listJobPostings_Authenticated_Returns200WithList() throws Exception {
+        DecodedJWT decodedJWT = Mockito.mock(DecodedJWT.class);
+        Mockito.when(decodedJWT.getSubject()).thenReturn(mockUserId.toString());
+        
+        Claim emailClaim = Mockito.mock(Claim.class);
+        Mockito.when(emailClaim.asString()).thenReturn("recruiter@example.com");
+        Mockito.when(decodedJWT.getClaim("email")).thenReturn(emailClaim);
+
+        Claim typeClaim = Mockito.mock(Claim.class);
+        Mockito.when(typeClaim.asString()).thenReturn("access");
+        Mockito.when(decodedJWT.getClaim("type")).thenReturn(typeClaim);
+
+        Mockito.when(jwtService.verifyToken(mockToken)).thenReturn(decodedJWT);
+
+        com.resumerank.backend.dto.JobPostingListResponse mockResponse = new com.resumerank.backend.dto.JobPostingListResponse(
+                java.util.List.of(), 0, 20, 0
+        );
+
+        Mockito.when(jobPostingService.listJobPostings(eq(mockUserId), any(), eq(0), eq(20)))
+                .thenReturn(mockResponse);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/job-postings")
+                .header("Authorization", "Bearer " + mockToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(20));
+    }
+
+    @Test
+    void getJobPosting_Own_Returns200() throws Exception {
+        UUID postingId = UUID.randomUUID();
+        JobPostingResponse response = new JobPostingResponse(
+                postingId, mockUserId, "Software Engineer", "Description",
+                new String[0], new String[0], null, null, JobPostingStatus.ACTIVE,
+                OffsetDateTime.now(), OffsetDateTime.now()
+        );
+
+        DecodedJWT decodedJWT = Mockito.mock(DecodedJWT.class);
+        Mockito.when(decodedJWT.getSubject()).thenReturn(mockUserId.toString());
+        
+        Claim emailClaim = Mockito.mock(Claim.class);
+        Mockito.when(emailClaim.asString()).thenReturn("recruiter@example.com");
+        Mockito.when(decodedJWT.getClaim("email")).thenReturn(emailClaim);
+
+        Claim typeClaim = Mockito.mock(Claim.class);
+        Mockito.when(typeClaim.asString()).thenReturn("access");
+        Mockito.when(decodedJWT.getClaim("type")).thenReturn(typeClaim);
+
+        Mockito.when(jwtService.verifyToken(mockToken)).thenReturn(decodedJWT);
+
+        Mockito.when(jobPostingService.getJobPosting(eq(mockUserId), eq(postingId)))
+                .thenReturn(response);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/job-postings/" + postingId)
+                .header("Authorization", "Bearer " + mockToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(postingId.toString()))
+                .andExpect(jsonPath("$.userId").value(mockUserId.toString()));
+    }
+
+    @Test
+    void getJobPosting_NonexistentOrNotOwn_ReturnsIdentical404() throws Exception {
+        UUID nonexistentId = UUID.randomUUID();
+        UUID notOwnId = UUID.randomUUID();
+
+        DecodedJWT decodedJWT = Mockito.mock(DecodedJWT.class);
+        Mockito.when(decodedJWT.getSubject()).thenReturn(mockUserId.toString());
+        
+        Claim emailClaim = Mockito.mock(Claim.class);
+        Mockito.when(emailClaim.asString()).thenReturn("recruiter@example.com");
+        Mockito.when(decodedJWT.getClaim("email")).thenReturn(emailClaim);
+
+        Claim typeClaim = Mockito.mock(Claim.class);
+        Mockito.when(typeClaim.asString()).thenReturn("access");
+        Mockito.when(decodedJWT.getClaim("type")).thenReturn(typeClaim);
+
+        Mockito.when(jwtService.verifyToken(mockToken)).thenReturn(decodedJWT);
+
+        Mockito.when(jobPostingService.getJobPosting(eq(mockUserId), eq(nonexistentId)))
+                .thenThrow(new com.resumerank.backend.exception.ResourceNotFoundException("Job posting not found"));
+        Mockito.when(jobPostingService.getJobPosting(eq(mockUserId), eq(notOwnId)))
+                .thenThrow(new com.resumerank.backend.exception.ResourceNotFoundException("Job posting not found"));
+
+        String nonexistentResponse = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/job-postings/" + nonexistentId)
+                .header("Authorization", "Bearer " + mockToken))
+                .andExpect(status().isNotFound())
+                .andReturn().getResponse().getContentAsString();
+
+        String notOwnResponse = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/job-postings/" + notOwnId)
+                .header("Authorization", "Bearer " + mockToken))
+                .andExpect(status().isNotFound())
+                .andReturn().getResponse().getContentAsString();
+
+        com.fasterxml.jackson.databind.JsonNode node1 = objectMapper.readTree(nonexistentResponse);
+        com.fasterxml.jackson.databind.JsonNode node2 = objectMapper.readTree(notOwnResponse);
+
+        org.junit.jupiter.api.Assertions.assertEquals(node1.get("type"), node2.get("type"));
+        org.junit.jupiter.api.Assertions.assertEquals(node1.get("title"), node2.get("title"));
+        org.junit.jupiter.api.Assertions.assertEquals(node1.get("status"), node2.get("status"));
+        org.junit.jupiter.api.Assertions.assertEquals(node1.get("detail"), node2.get("detail"));
+    }
+
+    @Test
+    void patchJobPosting_Own_Returns200() throws Exception {
+        UUID postingId = UUID.randomUUID();
+        JobPostingResponse response = new JobPostingResponse(
+                postingId, mockUserId, "Updated Title", "Description",
+                new String[0], new String[0], null, null, JobPostingStatus.ACTIVE,
+                OffsetDateTime.now(), OffsetDateTime.now()
+        );
+
+        DecodedJWT decodedJWT = Mockito.mock(DecodedJWT.class);
+        Mockito.when(decodedJWT.getSubject()).thenReturn(mockUserId.toString());
+        
+        Claim emailClaim = Mockito.mock(Claim.class);
+        Mockito.when(emailClaim.asString()).thenReturn("recruiter@example.com");
+        Mockito.when(decodedJWT.getClaim("email")).thenReturn(emailClaim);
+
+        Claim typeClaim = Mockito.mock(Claim.class);
+        Mockito.when(typeClaim.asString()).thenReturn("access");
+        Mockito.when(decodedJWT.getClaim("type")).thenReturn(typeClaim);
+
+        Mockito.when(jwtService.verifyToken(mockToken)).thenReturn(decodedJWT);
+
+        Mockito.when(jobPostingService.updateJobPosting(eq(mockUserId), eq(postingId), any()))
+                .thenReturn(response);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/job-postings/" + postingId)
+                .header("Authorization", "Bearer " + mockToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"Updated Title\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Updated Title"));
+    }
+
+    @Test
+    void patchJobPosting_NotOwn_Returns404() throws Exception {
+        UUID notOwnId = UUID.randomUUID();
+
+        DecodedJWT decodedJWT = Mockito.mock(DecodedJWT.class);
+        Mockito.when(decodedJWT.getSubject()).thenReturn(mockUserId.toString());
+        
+        Claim emailClaim = Mockito.mock(Claim.class);
+        Mockito.when(emailClaim.asString()).thenReturn("recruiter@example.com");
+        Mockito.when(decodedJWT.getClaim("email")).thenReturn(emailClaim);
+
+        Claim typeClaim = Mockito.mock(Claim.class);
+        Mockito.when(typeClaim.asString()).thenReturn("access");
+        Mockito.when(decodedJWT.getClaim("type")).thenReturn(typeClaim);
+
+        Mockito.when(jwtService.verifyToken(mockToken)).thenReturn(decodedJWT);
+
+        Mockito.when(jobPostingService.updateJobPosting(eq(mockUserId), eq(notOwnId), any()))
+                .thenThrow(new com.resumerank.backend.exception.ResourceNotFoundException("Job posting not found"));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/job-postings/" + notOwnId)
+                .header("Authorization", "Bearer " + mockToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"Updated Title\"}"))
+                .andExpect(status().isNotFound());
+    }
 }
