@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { jobPostingFormSchema, JobPostingFormData } from '../schema';
 import { Fraunces, Inter } from 'next/font/google';
 import { useAuth } from '@/context/auth-context';
 import { apiClient } from '@/lib/api-client';
@@ -24,35 +24,6 @@ const inter = Inter({
   weight: ['400', '600'],
   variable: '--font-inter',
 });
-
-const jobPostingFormSchema = z.object({
-  title: z
-    .string()
-    .trim()
-    .min(1, 'Title is required')
-    .max(250, 'Title must not exceed 250 characters'),
-  description: z
-    .string()
-    .trim()
-    .min(1, 'Description is required')
-    .max(10000, 'Description must not exceed 10000 characters'),
-  requiredSkills: z.array(z.string()),
-  niceToHaveSkills: z.array(z.string()),
-  minYearsExperience: z
-    .any()
-    .transform((val) => {
-      if (val === null || val === undefined || val === '') return null;
-      const num = Number(val);
-      return isNaN(num) ? null : num;
-    }),
-  seniorityLevel: z
-    .enum(['JUNIOR', 'MID', 'SENIOR', 'LEAD'])
-    .nullable()
-    .or(z.literal(''))
-    .transform((val) => (val === '' ? null : val)),
-});
-
-type JobPostingFormData = z.infer<typeof jobPostingFormSchema>;
 
 export default function CreateJobPostingPage() {
   const { accessToken } = useAuth();
