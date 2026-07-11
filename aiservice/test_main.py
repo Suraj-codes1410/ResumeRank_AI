@@ -249,3 +249,113 @@ def test_score_resume_exception_handled(mock_from_messages):
     assert data["success"] is False
     assert "Failed to generate scores via LLM" in data["error"]
 
+
+# ORCHESTRATION TESTS
+
+@patch("main.requests.post")
+@patch("main.run_scoring")
+@patch("main.run_extraction")
+def test_process_resume_success(mock_run_extraction, mock_run_scoring, mock_requests_post):
+    # Mock successful extraction
+    mock_run_extraction.return_value = {
+        "success": True,
+        "text": "Extracted resume content...",
+        "detectedEmail": "candidate@example.com"
+    }
+
+    # Mock successful scoring
+    mock_run_scoring.return_value = {
+        "success": True,
+        "score": {
+            "overallScore": 85,
+            "skillsScore": 90,
+            "experienceScore": 80,
+            "seniorityScore": 85,
+            "matchedSkills": ["Python", "SQL"],
+            "missingSkills": [],
+            "yearsExperienceDetected": 4.0,
+            "summary": "Excellent match."
+        }
+    }
+
+    # Mock webhook post response
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_requests_post.return_value = mock_response
+
+    response = client.post(
+        "/internal/process-resume",
+        json={
+            "candidateId": "candidate-uuid-111",
+            "fileUrl": "http://example.com/resume.pdf",
+            "jobTitle": "Python Developer",
+            "jobDescription": "Build APIs",
+            "requiredSkills": ["Python", "SQL"],
+            "niceToHaveSkills": [],
+            "minYearsExperience": 3
+        },
+        headers={"X-Internal-Token": "test-token-12345"}
+    )
+
+    # 1. Assert immediate response is 202 Accepted
+    assert response.status_code == 202
+    assert response.json() == {"message": "Resume processing accepted"}
+
+    # 2. Verify webhook callback payload was posted successfully
+    mock_requests_post.assert_called_once()
+    args, kwargs = mock_requests_post.call_args
+    assert args[0] == "http://localhost:8081/api/webhooks/candidate-results"
+    
+    payload = kwargs["json"]
+    assert payload["candidateId"] == "candidate-uuid-111"
+    assert payload["success"] is True
+    assert payload["score"]["overallScore"] == 85
+    assert payload["score"]["summary"] == "Excellent match."
+    
+    headers = kwargs["headers"]
+    assert headers["X-Internal-Token"] == "test-token-12345"
+
+@patch("main.requests.post")
+@patch("main.run_scoring")
+@patch("main.run_extraction")
+def test_process_resume_extraction_failure(mock_run_extraction, mock_run_scoring, mock_requests_post):
+    # Mock failed extraction
+    mock_run_extraction.return_value = {
+        "success": False,
+        "error": "PDF file is encrypted or corrupted",
+        "status_code": 400
+    }
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_requests_post.return_value = mock_response
+
+    response = client.post(
+        "/internal/process-resume",
+        json={
+            "candidateId": "candidate-uuid-222",
+            "fileUrl": "http://example.com/corrupted.pdf",
+            "jobTitle": "Python Developer",
+            "jobDescription": "Build APIs",
+            "requiredSkills": ["Python"],
+            "niceToHaveSkills": [],
+            "minYearsExperience": 3
+        },
+        headers={"X-Internal-Token": "test-token-12345"}
+    )
+
+    # 1. Assert immediate response is 202
+    assert response.status_code == 202
+
+    # 2. Verify webhook was posted with success=false and the specific error message
+    mock_requests_post.assert_called_once()
+    args, kwargs = mock_requests_post.call_args
+    payload = kwargs["json"]
+    assert payload["candidateId"] == "candidate-uuid-222"
+    assert payload["success"] is False
+    assert payload["error"] == "Extraction failed: PDF file is encrypted or corrupted"
+    
+    # 3. Verify scoring was NEVER called since extraction failed
+    mock_run_scoring.assert_not_called()
+
+

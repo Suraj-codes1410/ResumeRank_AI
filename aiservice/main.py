@@ -3,7 +3,7 @@ import os
 import re
 import requests
 from typing import Optional
-from fastapi import FastAPI, Depends, Header, HTTPException, status
+from fastapi import FastAPI, Depends, Header, HTTPException, status, BackgroundTasks
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from pypdf import PdfReader
@@ -37,37 +37,29 @@ class ExtractTextRequest(BaseModel):
     fileUrl: str
 
 def extract_email(text: str) -> Optional[str]:
-    # Simple email pattern extraction
     email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
     match = re.search(email_pattern, text)
     return match.group(0) if match else None
 
-@app.post("/internal/extract-text", dependencies=[Depends(verify_internal_token)])
-async def extract_text(request: ExtractTextRequest):
-    # 1. Download file from URL
+async def run_extraction(file_url: str) -> dict:
     try:
-        response = requests.get(request.fileUrl, timeout=15)
+        response = requests.get(file_url, timeout=15)
         if response.status_code != 200:
-            return JSONResponse(
-                status_code=400,
-                content={
-                    "success": False,
-                    "error": f"Failed to download file. Status code: {response.status_code}"
-                }
-            )
+            return {
+                "success": False,
+                "error": f"Failed to download file. Status code: {response.status_code}",
+                "status_code": 400
+            }
         file_content = response.content
     except requests.RequestException as e:
-        return JSONResponse(
-            status_code=400,
-            content={
-                "success": False,
-                "error": f"Connection failed while downloading file: {str(e)}"
-            }
-        )
+        return {
+            "success": False,
+            "error": f"Connection failed while downloading file: {str(e)}",
+            "status_code": 400
+        }
 
-    # 2. Detect file type (Content-Type header or file extension)
     content_type = response.headers.get("Content-Type", "").lower()
-    url_path = request.fileUrl.split("?")[0].lower()
+    url_path = file_url.split("?")[0].lower()
 
     is_pdf = "application/pdf" in content_type or url_path.endswith(".pdf")
     is_docx = (
@@ -78,7 +70,6 @@ async def extract_text(request: ExtractTextRequest):
 
     text = ""
 
-    # 3. Extract text content
     try:
         if is_pdf:
             pdf_file = io.BytesIO(file_content)
@@ -95,34 +86,26 @@ async def extract_text(request: ExtractTextRequest):
             extracted_paragraphs = [p.text for p in doc.paragraphs if p.text]
             text = "\n".join(extracted_paragraphs)
         else:
-            return JSONResponse(
-                status_code=400,
-                content={
-                    "success": False,
-                    "error": "Unsupported file format. Only PDF and DOCX files are allowed."
-                }
-            )
-    except Exception as e:
-        return JSONResponse(
-            status_code=400,
-            content={
+            return {
                 "success": False,
-                "error": f"Failed to extract text from document: {str(e)}"
+                "error": "Unsupported file format. Only PDF and DOCX files are allowed.",
+                "status_code": 400
             }
-        )
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to extract text from document: {str(e)}",
+            "status_code": 400
+        }
 
-    # 4. Verify text extraction yielded contents
     text_stripped = text.strip()
     if not text_stripped or len(text_stripped) < 10:
-        return JSONResponse(
-            status_code=200,
-            content={
-                "success": False,
-                "error": "No readable text found in the document"
-            }
-        )
+        return {
+            "success": False,
+            "error": "No readable text found in the document",
+            "status_code": 200
+        }
 
-    # 5. Extract email and return response
     detected_email = extract_email(text_stripped)
 
     return {
@@ -130,6 +113,14 @@ async def extract_text(request: ExtractTextRequest):
         "text": text_stripped,
         "detectedEmail": detected_email
     }
+
+@app.post("/internal/extract-text", dependencies=[Depends(verify_internal_token)])
+async def extract_text(request: ExtractTextRequest):
+    result = await run_extraction(request.fileUrl)
+    if not result.get("success", False):
+        status_code = result.pop("status_code", 400)
+        return JSONResponse(status_code=status_code, content=result)
+    return result
 
 
 # LLM SCORING SCHEMAS & LOGIC
@@ -154,7 +145,6 @@ class CandidateScoreResponse(BaseModel):
 
 def validate_score(score: CandidateScoreResponse) -> bool:
     for s in [score.overallScore, score.skillsScore, score.experienceScore, score.seniorityScore]:
-        # Strictly reject values outside 0-100 to ensure downstream mathematical integrity
         if s < 0 or s > 100:
             return False
     if not isinstance(score.matchedSkills, list) or not all(isinstance(x, str) for x in score.matchedSkills):
@@ -187,7 +177,6 @@ def get_llm():
             max_tokens=2000
         )
     else:
-        # Returns a dummy configuration so that the app starts up without crashing on import
         return ChatOpenAI(
             openai_api_key="dummy_key",
             model_name="gpt-4o-mini",
@@ -226,8 +215,14 @@ Candidate Resume:
 {resumeText}
 """
 
-@app.post("/internal/score-resume", dependencies=[Depends(verify_internal_token)])
-async def score_resume(request: ScoreResumeRequest):
+async def run_scoring(
+    resume_text: str,
+    job_title: str,
+    job_description: str,
+    required_skills: list[str],
+    nice_to_have_skills: list[str],
+    min_years_exp: Optional[float]
+) -> dict:
     try:
         llm = get_llm()
         structured_llm = llm.with_structured_output(CandidateScoreResponse)
@@ -237,51 +232,162 @@ async def score_resume(request: ScoreResumeRequest):
         ])
         chain = prompt | structured_llm
         
-        # 1. First LLM Call
         result = chain.invoke({
-            "jobTitle": request.jobTitle,
-            "jobDescription": request.jobDescription,
-            "requiredSkills": ", ".join(request.requiredSkills),
-            "niceToHaveSkills": ", ".join(request.niceToHaveSkills),
-            "minYearsExperience": request.minYearsExperience if request.minYearsExperience is not None else "None",
-            "resumeText": request.resumeText
+            "jobTitle": job_title,
+            "jobDescription": job_description,
+            "requiredSkills": ", ".join(required_skills),
+            "niceToHaveSkills": ", ".join(nice_to_have_skills),
+            "minYearsExperience": min_years_exp if min_years_exp is not None else "None",
+            "resumeText": resume_text
         })
         
         if validate_score(result):
             return {"success": True, "score": result.model_dump()}
             
-        # 2. Retry ONCE if first call failed validation
         retry_prompt = ChatPromptTemplate.from_messages([
             ("system", RETRY_SYSTEM_PROMPT),
         ])
         retry_chain = retry_prompt | structured_llm
         
         result = retry_chain.invoke({
-            "jobTitle": request.jobTitle,
-            "jobDescription": request.jobDescription,
-            "requiredSkills": ", ".join(request.requiredSkills),
-            "niceToHaveSkills": ", ".join(request.niceToHaveSkills),
-            "minYearsExperience": request.minYearsExperience if request.minYearsExperience is not None else "None",
-            "resumeText": request.resumeText
+            "jobTitle": job_title,
+            "jobDescription": job_description,
+            "requiredSkills": ", ".join(required_skills),
+            "niceToHaveSkills": ", ".join(nice_to_have_skills),
+            "minYearsExperience": min_years_exp if min_years_exp is not None else "None",
+            "resumeText": resume_text
         })
         
         if validate_score(result):
             return {"success": True, "score": result.model_dump()}
         else:
-            return JSONResponse(
-                status_code=422,
-                content={
-                    "success": False,
-                    "error": "LLM response failed validation twice. Clamping bounds violated."
-                }
-            )
+            return {
+                "success": False,
+                "error": "LLM response failed validation twice. Clamping bounds violated.",
+                "status_code": 422
+            }
             
     except Exception as e:
-        return JSONResponse(
-            status_code=400,
-            content={
-                "success": False,
-                "error": f"Failed to generate scores via LLM: {str(e)}"
-            }
-        )
+        return {
+            "success": False,
+            "error": f"Failed to generate scores via LLM: {str(e)}",
+            "status_code": 400
+        }
+
+@app.post("/internal/score-resume", dependencies=[Depends(verify_internal_token)])
+async def score_resume(request: ScoreResumeRequest):
+    result = await run_scoring(
+        resume_text=request.resumeText,
+        job_title=request.jobTitle,
+        job_description=request.jobDescription,
+        required_skills=request.requiredSkills,
+        nice_to_have_skills=request.niceToHaveSkills,
+        min_years_exp=request.minYearsExperience
+    )
+    if not result.get("success", False):
+        status_code = result.pop("status_code", 400)
+        return JSONResponse(status_code=status_code, content=result)
+    return result
+
+
+# ORCHESTRATION LAYER
+
+class ProcessResumeRequest(BaseModel):
+    candidateId: str
+    fileUrl: str
+    jobTitle: str
+    jobDescription: str
+    requiredSkills: list[str]
+    niceToHaveSkills: list[str]
+    minYearsExperience: Optional[float] = None
+
+import logging
+logger = logging.getLogger("uvicorn.error")
+
+async def send_webhook_callback(url: str, payload: dict, headers: dict):
+    try:
+        # Send HTTP POST call to Spring Boot
+        response = requests.post(url, json=payload, headers=headers, timeout=15)
+        if response.status_code not in [200, 201, 202, 204]:
+            logger.error(
+                f"Webhook callback to Spring Boot failed with status: {response.status_code}. Response: {response.text}"
+            )
+        else:
+            logger.info(f"Webhook callback sent successfully. Status: {response.status_code}")
+    except Exception as e:
+        logger.error(f"Failed to connect to Spring Boot webhook at {url}: {str(e)}")
+
+async def background_process_resume(
+    candidate_id: str,
+    file_url: str,
+    job_title: str,
+    job_description: str,
+    required_skills: list[str],
+    nice_to_have_skills: list[str],
+    min_years_exp: Optional[float]
+):
+    webhook_url = os.getenv("SPRING_WEBHOOK_URL", "http://localhost:8081/api/webhooks/candidate-results")
+    internal_token = os.getenv("INTERNAL_SERVICE_TOKEN")
+    
+    headers = {
+        "Content-Type": "application/json",
+        "X-Internal-Token": internal_token
+    }
+
+    # 1. Run extraction
+    extraction_result = await run_extraction(file_url)
+    if not extraction_result.get("success", False):
+        error_msg = extraction_result.get("error", "Unknown extraction error")
+        payload = {
+            "candidateId": candidate_id,
+            "success": False,
+            "error": f"Extraction failed: {error_msg}"
+        }
+        await send_webhook_callback(webhook_url, payload, headers)
+        return
+
+    extracted_text = extraction_result.get("text")
+
+    # 2. Run scoring
+    scoring_result = await run_scoring(
+        resume_text=extracted_text,
+        job_title=job_title,
+        job_description=job_description,
+        required_skills=required_skills,
+        nice_to_have_skills=nice_to_have_skills,
+        min_years_exp=min_years_exp
+    )
+    
+    if not scoring_result.get("success", False):
+        error_msg = scoring_result.get("error", "Unknown scoring error")
+        payload = {
+            "candidateId": candidate_id,
+            "success": False,
+            "error": f"Scoring failed: {error_msg}"
+        }
+        await send_webhook_callback(webhook_url, payload, headers)
+        return
+
+    # 3. Success callback
+    payload = {
+        "candidateId": candidate_id,
+        "success": True,
+        "score": scoring_result.get("score")
+    }
+    await send_webhook_callback(webhook_url, payload, headers)
+
+@app.post("/internal/process-resume", status_code=status.HTTP_202_ACCEPTED, dependencies=[Depends(verify_internal_token)])
+async def process_resume(request: ProcessResumeRequest, background_tasks: BackgroundTasks):
+    background_tasks.add_task(
+        background_process_resume,
+        request.candidateId,
+        request.fileUrl,
+        request.jobTitle,
+        request.jobDescription,
+        request.requiredSkills,
+        request.niceToHaveSkills,
+        request.minYearsExperience
+    )
+    return {"message": "Resume processing accepted"}
+
 
