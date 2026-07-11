@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { Fraunces, Inter } from 'next/font/google';
 import ScoreCard from './components/ScoreCard';
 import FeatureCard from './components/FeatureCard';
@@ -116,29 +115,29 @@ export default function LandingPage() {
     >
       {/* 1. Navigation Bar */}
       <nav className="w-full max-w-7xl mx-auto px-6 py-6 flex justify-between items-center border-b border-brand-border/40">
-        <Link href="/" className={`text-xl font-bold tracking-tight ${fraunces.className}`}>
+        <a href="/" className={`text-xl font-bold tracking-tight ${fraunces.className}`}>
           ResumeRank
-        </Link>
+        </a>
         
         <div className="hidden md:flex gap-8 text-sm text-brand-text-secondary">
-          <Link href="#product" className="hover:text-brand-text-primary transition-colors duration-200">
+          <a href="#product" className="hover:text-brand-text-primary transition-colors duration-200">
             Product
-          </Link>
-          <Link href="#how-it-works" className="hover:text-brand-text-primary transition-colors duration-200">
+          </a>
+          <a href="#how-it-works" className="hover:text-brand-text-primary transition-colors duration-200">
             How it works
-          </Link>
-          <Link href="#pricing" className="hover:text-brand-text-primary transition-colors duration-200">
+          </a>
+          <a href="#pricing" className="hover:text-brand-text-primary transition-colors duration-200">
             Pricing
-          </Link>
+          </a>
         </div>
 
-        <Link
+        <a
           href="/signup"
           className="text-xs uppercase tracking-wider font-semibold border border-brand-accent px-4 py-2 text-brand-accent hover:bg-brand-accent/10 transition-all duration-200"
           style={{ borderRadius: 'var(--radius, 6px)' }}
         >
           Get started
-        </Link>
+        </a>
       </nav>
 
       {/* 2 & 3. Hero Section & Signature Element */}
@@ -166,20 +165,20 @@ export default function LandingPage() {
 
           {/* Action CTAs */}
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <Link
+            <a
               href="/signup"
               className="inline-flex justify-center items-center border border-brand-accent px-6 py-3 text-sm font-semibold tracking-wide text-brand-accent hover:bg-brand-accent/10 transition-all duration-200"
               style={{ borderRadius: 'var(--radius, 6px)' }}
             >
               Get started
-            </Link>
-            <Link
+            </a>
+            <a
               href="#product"
               className="inline-flex justify-center items-center border border-brand-border px-6 py-3 text-sm font-semibold tracking-wide text-brand-text-secondary hover:text-brand-text-primary hover:border-brand-border/80 transition-all duration-200"
               style={{ borderRadius: 'var(--radius, 6px)' }}
             >
               See a sample scorecard
-            </Link>
+            </a>
           </div>
         </div>
 
