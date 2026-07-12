@@ -5,7 +5,7 @@ const BACKEND_URL = process.env.BACKEND_API_URL || 'http://localhost:8081';
 
 export async function POST(request: Request) {
   try {
-    const authHeader = request.headers.get('Authorization') || '';
+    const authHeader = request.headers.get('Authorization') || request.headers.get('authorization') || '';
 
     const response = await axios.post(`${BACKEND_URL}/api/uploads/signature`, {}, {
       headers: {
