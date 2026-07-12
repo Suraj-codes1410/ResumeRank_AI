@@ -26,6 +26,7 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -113,5 +114,41 @@ class CandidateControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getCandidates_Authenticated_ReturnsList200() throws Exception {
+        stubJwtVerification();
+
+        CandidateResponse response = new CandidateResponse(
+                UUID.randomUUID(),
+                mockJobPostingId,
+                "John Doe",
+                "john@example.com",
+                "http://cloudinary.com/resumes/123.pdf",
+                ResumeStatus.SCORED,
+                null,
+                PipelineStatus.NEW,
+                OffsetDateTime.now(),
+                OffsetDateTime.now(),
+                85
+        );
+
+        Mockito.when(candidateService.getCandidatesForJobPosting(eq(mockUserId), eq(mockJobPostingId)))
+                .thenReturn(java.util.List.of(response));
+
+        mockMvc.perform(get("/api/job-postings/" + mockJobPostingId + "/candidates")
+                        .header("Authorization", "Bearer " + mockToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].jobPostingId").value(mockJobPostingId.toString()))
+                .andExpect(jsonPath("$[0].name").value("John Doe"))
+                .andExpect(jsonPath("$[0].overallScore").value(85))
+                .andExpect(jsonPath("$[0].resumeStatus").value("SCORED"));
+    }
+
+    @Test
+    void getCandidates_Unauthenticated_Returns401() throws Exception {
+        mockMvc.perform(get("/api/job-postings/" + mockJobPostingId + "/candidates"))
+                .andExpect(status().isUnauthorized());
     }
 }
