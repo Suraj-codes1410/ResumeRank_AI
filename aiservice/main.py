@@ -326,7 +326,7 @@ async def background_process_resume(
     nice_to_have_skills: list[str],
     min_years_exp: Optional[float]
 ):
-    webhook_url = os.getenv("SPRING_WEBHOOK_URL", "http://localhost:8081/api/webhooks/candidate-results")
+    webhook_url = os.getenv("SPRING_WEBHOOK_URL", "http://localhost:8081/api/internal/ai-webhook")
     internal_token = os.getenv("INTERNAL_SERVICE_TOKEN")
     
     headers = {
