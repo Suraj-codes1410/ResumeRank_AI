@@ -66,10 +66,21 @@ public class Candidate {
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
 
+    @Column(name = "resume_hash", columnDefinition = "TEXT")
+    private String resumeHash;
+
     @OneToOne(mappedBy = "candidate", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
     private CandidateScore candidateScore;
 
     public Candidate() {
+    }
+
+    public String getResumeHash() {
+        return resumeHash;
+    }
+
+    public void setResumeHash(String resumeHash) {
+        this.resumeHash = resumeHash;
     }
 
     public UUID getId() {

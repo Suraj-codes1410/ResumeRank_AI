@@ -252,4 +252,93 @@ class CandidateServiceTest {
         Assertions.assertEquals(existingScore.getId(), savedScore.getId());
         Assertions.assertEquals(95, savedScore.getOverallScore());
     }
+
+    @Test
+    void createCandidate_DuplicateResumeHash_ReturnsDuplicateOfCandidateId() {
+        Mockito.when(jobPostingRepository.findById(jobPostingId)).thenReturn(Optional.of(jobPosting));
+
+        UUID firstCandidateId = UUID.randomUUID();
+        UUID secondCandidateId = UUID.randomUUID();
+        String resumeHash = "md5-resume-hash-123";
+
+        Candidate firstCandidate = new Candidate();
+        firstCandidate.setId(firstCandidateId);
+        firstCandidate.setJobPosting(jobPosting);
+        firstCandidate.setResumeFileUrl("http://cloudinary.com/resume-first.pdf");
+        firstCandidate.setResumeHash(resumeHash);
+
+        // When searching for duplicates, return the first candidate
+        Mockito.when(candidateRepository.findByJobPostingIdAndResumeHash(jobPostingId, resumeHash))
+                .thenReturn(java.util.List.of(firstCandidate));
+
+        Mockito.when(candidateRepository.saveAndFlush(any(Candidate.class))).thenAnswer(invocation -> {
+            Candidate c = invocation.getArgument(0);
+            c.setId(secondCandidateId);
+            return c;
+        });
+
+        // Suppress actual async call
+        CandidateService spyService = Mockito.spy(candidateService);
+        Mockito.doNothing().when(spyService).processCandidateResumeAsync(any(UUID.class));
+        ReflectionTestUtils.setField(spyService, "self", spyService);
+
+        CandidateCreateRequest request = new CandidateCreateRequest("http://cloudinary.com/resume-second.pdf", resumeHash);
+        CandidateResponse response = spyService.createCandidate(userId, jobPostingId, request);
+
+        Assertions.assertNotNull(response);
+        Assertions.assertEquals(secondCandidateId, response.getId());
+        Assertions.assertEquals(firstCandidateId, response.getDuplicateOfCandidateId());
+    }
+
+    @Test
+    void processCandidateResumeAsync_IndependentConcurrency_NoInterference() {
+        UUID candidateSuccessId = UUID.randomUUID();
+        Candidate candidateSuccess = new Candidate();
+        candidateSuccess.setId(candidateSuccessId);
+        candidateSuccess.setJobPosting(jobPosting);
+        candidateSuccess.setResumeFileUrl("http://cloudinary.com/resume-success.pdf");
+        candidateSuccess.setResumeStatus(ResumeStatus.PENDING);
+
+        UUID candidateFailId = UUID.randomUUID();
+        Candidate candidateFail = new Candidate();
+        candidateFail.setId(candidateFailId);
+        candidateFail.setJobPosting(jobPosting);
+        candidateFail.setResumeFileUrl("http://cloudinary.com/resume-fail.pdf");
+        candidateFail.setResumeStatus(ResumeStatus.PENDING);
+
+        Mockito.when(candidateRepository.findByIdWithJobPosting(candidateSuccessId)).thenReturn(Optional.of(candidateSuccess));
+        Mockito.when(candidateRepository.findByIdWithJobPosting(candidateFailId)).thenReturn(Optional.of(candidateFail));
+
+        Mockito.when(candidateRepository.findById(candidateSuccessId)).thenReturn(Optional.of(candidateSuccess));
+        Mockito.when(candidateRepository.findById(candidateFailId)).thenReturn(Optional.of(candidateFail));
+
+        // Mock restTemplate.postForEntity:
+        // - For candidateSuccess: returns 200 (Success)
+        // - For candidateFail: throws exception (Fail)
+        Mockito.when(restTemplate.postForEntity(any(String.class), any(), eq(String.class))).thenAnswer(invocation -> {
+            org.springframework.http.HttpEntity<?> entity = invocation.getArgument(1);
+            Object body = entity.getBody();
+            String candidateId = (String) ReflectionTestUtils.getField(body, "candidateId");
+            if (candidateFailId.toString().equals(candidateId)) {
+                throw new RestClientException("Connection refused");
+            }
+            return new org.springframework.http.ResponseEntity<>("OK", org.springframework.http.HttpStatus.OK);
+        });
+
+        // Run both async calls in quick succession
+        candidateService.processCandidateResumeAsync(candidateSuccessId);
+        candidateService.processCandidateResumeAsync(candidateFailId);
+
+        // Verify status updates
+        // The successful one should still be PENDING (waiting for webhook)
+        Assertions.assertEquals(ResumeStatus.PENDING, candidateSuccess.getResumeStatus());
+        
+        // The failed one should be FAILED
+        ArgumentCaptor<Candidate> candidateCaptor = ArgumentCaptor.forClass(Candidate.class);
+        Mockito.verify(candidateRepository, Mockito.atLeastOnce()).save(candidateCaptor.capture());
+        
+        boolean foundFailed = candidateCaptor.getAllValues().stream()
+                .anyMatch(c -> c.getId().equals(candidateFailId) && c.getResumeStatus() == ResumeStatus.FAILED);
+        Assertions.assertTrue(foundFailed);
+    }
 }

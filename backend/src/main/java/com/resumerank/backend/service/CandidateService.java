@@ -58,9 +58,18 @@ public class CandidateService {
             throw new ResourceNotFoundException("Job posting not found");
         }
 
+        UUID duplicateOf = null;
+        if (request.getResumeHash() != null && !request.getResumeHash().isBlank()) {
+            java.util.List<Candidate> duplicates = candidateRepository.findByJobPostingIdAndResumeHash(jobPostingId, request.getResumeHash());
+            if (!duplicates.isEmpty()) {
+                duplicateOf = duplicates.get(0).getId();
+            }
+        }
+
         Candidate candidate = new Candidate();
         candidate.setJobPosting(jobPosting);
         candidate.setResumeFileUrl(request.getResumeFileUrl());
+        candidate.setResumeHash(request.getResumeHash());
         candidate.setResumeStatus(ResumeStatus.PENDING);
         candidate.setPipelineStatus(PipelineStatus.NEW);
 
@@ -69,7 +78,9 @@ public class CandidateService {
         // Call async method on AOP proxy self reference to run asynchronously
         self.processCandidateResumeAsync(saved.getId());
 
-        return mapToResponse(saved);
+        CandidateResponse response = mapToResponse(saved);
+        response.setDuplicateOfCandidateId(duplicateOf);
+        return response;
     }
 
     @Transactional(readOnly = true)
