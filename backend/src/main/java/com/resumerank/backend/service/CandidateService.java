@@ -72,6 +72,20 @@ public class CandidateService {
         return mapToResponse(saved);
     }
 
+    @Transactional(readOnly = true)
+    public java.util.List<CandidateResponse> getCandidatesForJobPosting(UUID userId, UUID jobPostingId) {
+        JobPosting jobPosting = jobPostingRepository.findById(jobPostingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Job posting not found"));
+
+        if (!jobPosting.getUser().getId().equals(userId)) {
+            throw new ResourceNotFoundException("Job posting not found");
+        }
+
+        return candidateRepository.findByJobPostingIdWithScore(jobPostingId).stream()
+                .map(this::mapToResponse)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
     @Async
     public void processCandidateResumeAsync(UUID candidateId) {
         Candidate candidate = candidateRepository.findByIdWithJobPosting(candidateId).orElse(null);
@@ -129,6 +143,9 @@ public class CandidateService {
     }
 
     private CandidateResponse mapToResponse(Candidate candidate) {
+        Integer overallScore = candidate.getCandidateScore() != null 
+                ? candidate.getCandidateScore().getOverallScore() 
+                : null;
         return new CandidateResponse(
                 candidate.getId(),
                 candidate.getJobPosting().getId(),
@@ -139,7 +156,8 @@ public class CandidateService {
                 candidate.getParseError(),
                 candidate.getPipelineStatus(),
                 candidate.getCreatedAt(),
-                candidate.getUpdatedAt()
+                candidate.getUpdatedAt(),
+                overallScore
         );
     }
 
