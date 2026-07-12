@@ -16,6 +16,7 @@ public class CandidateResponse {
     private PipelineStatus pipelineStatus;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
+    private Integer overallScore;
 
     public CandidateResponse() {
     }
@@ -33,6 +34,22 @@ public class CandidateResponse {
         this.pipelineStatus = pipelineStatus;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+    }
+
+    public CandidateResponse(UUID id, UUID jobPostingId, String name, String email, String resumeFileUrl,
+                             ResumeStatus resumeStatus, String parseError, PipelineStatus pipelineStatus,
+                             OffsetDateTime createdAt, OffsetDateTime updatedAt, Integer overallScore) {
+        this.id = id;
+        this.jobPostingId = jobPostingId;
+        this.name = name;
+        this.email = email;
+        this.resumeFileUrl = resumeFileUrl;
+        this.resumeStatus = resumeStatus;
+        this.parseError = parseError;
+        this.pipelineStatus = pipelineStatus;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.overallScore = overallScore;
     }
 
     public UUID getId() {
@@ -113,5 +130,13 @@ public class CandidateResponse {
 
     public void setUpdatedAt(OffsetDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Integer getOverallScore() {
+        return overallScore;
+    }
+
+    public void setOverallScore(Integer overallScore) {
+        this.overallScore = overallScore;
     }
 }
