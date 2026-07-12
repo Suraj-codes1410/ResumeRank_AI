@@ -2,12 +2,15 @@ package com.resumerank.backend.service;
 
 import com.resumerank.backend.dto.CandidateCreateRequest;
 import com.resumerank.backend.dto.CandidateResponse;
+import com.resumerank.backend.dto.AiWebhookPayload;
 import com.resumerank.backend.entity.Candidate;
+import com.resumerank.backend.entity.CandidateScore;
 import com.resumerank.backend.entity.JobPosting;
 import com.resumerank.backend.entity.PipelineStatus;
 import com.resumerank.backend.entity.ResumeStatus;
 import com.resumerank.backend.exception.ResourceNotFoundException;
 import com.resumerank.backend.repository.CandidateRepository;
+import com.resumerank.backend.repository.CandidateScoreRepository;
 import com.resumerank.backend.repository.JobPostingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,12 +31,15 @@ public class CandidateService {
     private CandidateRepository candidateRepository;
 
     @Autowired
+    private CandidateScoreRepository candidateScoreRepository;
+
+    @Autowired
     private JobPostingRepository jobPostingRepository;
 
     @Autowired
     private RestTemplate restTemplate;
 
-    @Value("${INTERNAL_SERVICE_TOKEN:}")
+    @Value("${INTERNAL_SERVICE_TOKEN:5ec834ec8d0b81d070cde05c99231c6bab517c11f510cf5139353204841b42b8}")
     private String internalServiceToken;
 
     @Value("${AI_SERVICE_URL:http://localhost:8000}")
@@ -156,5 +162,76 @@ public class CandidateService {
             this.niceToHaveSkills = niceToHaveSkills;
             this.minYearsExperience = minYearsExperience;
         }
+    }
+
+    @Transactional
+    public void handleAiWebhook(AiWebhookPayload payload) {
+        UUID candidateId = UUID.fromString(payload.getCandidateId());
+        
+        Candidate candidate = candidateRepository.findById(candidateId)
+                .orElseThrow(() -> new ResourceNotFoundException("Candidate not found"));
+
+        if (!payload.isSuccess()) {
+            candidate.setResumeStatus(ResumeStatus.FAILED);
+            candidate.setParseError(payload.getError());
+            candidateRepository.saveAndFlush(candidate);
+            return;
+        }
+
+        // Validate payload score (defense in depth validation crossing service boundary)
+        AiWebhookPayload.ScoreDto scoreDto = payload.getScore();
+        if (scoreDto == null || !validateScorePayload(scoreDto)) {
+            System.err.println("Score payload validation failed for candidate: " + candidateId);
+            candidate.setResumeStatus(ResumeStatus.FAILED);
+            candidate.setParseError("Validation failed for score payload");
+            candidateRepository.saveAndFlush(candidate);
+            return;
+        }
+
+        // Upsert CandidateScore: retrieve existing score by candidate ID or create a new one
+        CandidateScore candidateScore = candidateScoreRepository.findByCandidateId(candidateId)
+                .orElse(new CandidateScore());
+        
+        candidateScore.setCandidate(candidate);
+        candidateScore.setOverallScore(scoreDto.getOverallScore());
+        candidateScore.setSkillsScore(scoreDto.getSkillsScore());
+        candidateScore.setExperienceScore(scoreDto.getExperienceScore());
+        candidateScore.setSeniorityScore(scoreDto.getSeniorityScore());
+        
+        String[] matchedArray = scoreDto.getMatchedSkills() != null 
+                ? scoreDto.getMatchedSkills().toArray(new String[0]) 
+                : new String[0];
+        String[] missingArray = scoreDto.getMissingSkills() != null 
+                ? scoreDto.getMissingSkills().toArray(new String[0]) 
+                : new String[0];
+        
+        candidateScore.setMatchedSkills(matchedArray);
+        candidateScore.setMissingSkills(missingArray);
+        
+        if (scoreDto.getYearsExperienceDetected() != null) {
+            candidateScore.setYearsExperienceDetected(java.math.BigDecimal.valueOf(scoreDto.getYearsExperienceDetected()));
+        } else {
+            candidateScore.setYearsExperienceDetected(null);
+        }
+        
+        candidateScore.setSummary(scoreDto.getSummary());
+        candidateScore.setScoredAt(java.time.OffsetDateTime.now());
+
+        candidateScoreRepository.saveAndFlush(candidateScore);
+
+        // Update candidate status to SCORED
+        candidate.setResumeStatus(ResumeStatus.SCORED);
+        candidateRepository.saveAndFlush(candidate);
+    }
+
+    private boolean validateScorePayload(AiWebhookPayload.ScoreDto score) {
+        if (score.getOverallScore() == null || score.getOverallScore() < 0 || score.getOverallScore() > 100) return false;
+        if (score.getSkillsScore() == null || score.getSkillsScore() < 0 || score.getSkillsScore() > 100) return false;
+        if (score.getExperienceScore() == null || score.getExperienceScore() < 0 || score.getExperienceScore() > 100) return false;
+        if (score.getSeniorityScore() == null || score.getSeniorityScore() < 0 || score.getSeniorityScore() > 100) return false;
+        if (score.getMatchedSkills() == null) return false;
+        if (score.getMissingSkills() == null) return false;
+        if (score.getSummary() == null || score.getSummary().trim().isEmpty()) return false;
+        return true;
     }
 }
