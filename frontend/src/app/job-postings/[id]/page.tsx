@@ -228,11 +228,13 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
       );
 
       const secureUrl = uploadResponse.data.secure_url;
+      const rawEtag = uploadResponse.data.etag;
+      const cleanEtag = rawEtag ? rawEtag.replace(/"/g, '') : null;
 
       // 3. Register candidate record on Spring Boot
       const candidateResponse = await apiClient.post(
         `/job-postings/${id}/candidates`,
-        { resumeFileUrl: secureUrl },
+        { resumeFileUrl: secureUrl, resumeHash: cleanEtag },
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
