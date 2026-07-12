@@ -304,7 +304,7 @@ def test_process_resume_success(mock_run_extraction, mock_run_scoring, mock_requ
     # 2. Verify webhook callback payload was posted successfully
     mock_requests_post.assert_called_once()
     args, kwargs = mock_requests_post.call_args
-    assert args[0] == "http://localhost:8081/api/webhooks/candidate-results"
+    assert args[0] == "http://localhost:8081/api/internal/ai-webhook"
     
     payload = kwargs["json"]
     assert payload["candidateId"] == "candidate-uuid-111"
