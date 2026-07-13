@@ -8,11 +8,13 @@ import com.resumerank.backend.entity.ResumeStatus;
 import com.resumerank.backend.entity.PipelineStatus;
 import com.resumerank.backend.entity.CandidateScore;
 import com.resumerank.backend.entity.JobPostingStatus;
+import com.resumerank.backend.entity.CandidateStatusLog;
 import com.resumerank.backend.exception.ResourceNotFoundException;
 import com.resumerank.backend.repository.CandidateRepository;
 import com.resumerank.backend.repository.CandidateScoreRepository;
 import com.resumerank.backend.repository.JobPostingRepository;
 import com.resumerank.backend.repository.UserRepository;
+import com.resumerank.backend.repository.CandidateStatusLogRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,6 +63,9 @@ class CandidateListIntegrationTest {
 
     @Autowired
     private CandidateScoreRepository candidateScoreRepository;
+
+    @Autowired
+    private CandidateStatusLogRepository candidateStatusLogRepository;
 
     private User recruiterA;
     private User recruiterB;
@@ -331,5 +336,122 @@ class CandidateListIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.resumeStatus").value("FAILED"))
                 .andExpect(jsonPath("$.parseError").value("Could not extract text from document"));
+    }
+
+    @Test
+    void updateCandidateStatus_GenuineChange_UpdatesAndLogs() throws Exception {
+        stubJwt("tokenA", recruiterA.getId(), recruiterA.getEmail());
+
+        Candidate candidate = new Candidate();
+        candidate.setJobPosting(postingA);
+        candidate.setResumeFileUrl("http://cloudinary.com/status-test.pdf");
+        candidate.setResumeStatus(ResumeStatus.PENDING);
+        candidate.setPipelineStatus(PipelineStatus.NEW);
+        candidate = candidateRepository.saveAndFlush(candidate);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // 1. Perform genuine status transition (NEW -> REVIEWING)
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/candidates/" + candidate.getId() + "/status")
+                        .header("Authorization", "Bearer tokenA")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"reviewing\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pipelineStatus").value("REVIEWING"));
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // 2. Assert in DB that candidate is updated and 1 log entry is written
+        Candidate updated = candidateRepository.findById(candidate.getId()).get();
+        Assertions.assertEquals(PipelineStatus.REVIEWING, updated.getPipelineStatus());
+
+        java.util.List<CandidateStatusLog> logs = candidateStatusLogRepository.findByCandidateIdOrderByCreatedAtDesc(candidate.getId());
+        Assertions.assertEquals(1, logs.size());
+        Assertions.assertEquals(PipelineStatus.NEW, logs.get(0).getFromStatus());
+        Assertions.assertEquals(PipelineStatus.REVIEWING, logs.get(0).getToStatus());
+        Assertions.assertEquals(recruiterA.getId(), logs.get(0).getChangedBy().getId());
+    }
+
+    @Test
+    void updateCandidateStatus_NoOpChange_DoesNotLog() throws Exception {
+        stubJwt("tokenA", recruiterA.getId(), recruiterA.getEmail());
+
+        Candidate candidate = new Candidate();
+        candidate.setJobPosting(postingA);
+        candidate.setResumeFileUrl("http://cloudinary.com/status-noop.pdf");
+        candidate.setResumeStatus(ResumeStatus.PENDING);
+        candidate.setPipelineStatus(PipelineStatus.NEW);
+        candidate = candidateRepository.saveAndFlush(candidate);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // 1. First change (NEW -> REVIEWING) -> should create log
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/candidates/" + candidate.getId() + "/status")
+                        .header("Authorization", "Bearer tokenA")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"reviewing\"}"))
+                .andExpect(status().isOk());
+
+        // 2. Second change (REVIEWING -> REVIEWING) -> should NOT create log
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/candidates/" + candidate.getId() + "/status")
+                        .header("Authorization", "Bearer tokenA")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"reviewing\"}"))
+                .andExpect(status().isOk());
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // Assert only 1 log exists total
+        java.util.List<CandidateStatusLog> logs = candidateStatusLogRepository.findByCandidateIdOrderByCreatedAtDesc(candidate.getId());
+        Assertions.assertEquals(1, logs.size());
+    }
+
+    @Test
+    void getCandidateStatusLog_ReturnsNewestFirstWithEmail() throws Exception {
+        stubJwt("tokenA", recruiterA.getId(), recruiterA.getEmail());
+
+        Candidate candidate = new Candidate();
+        candidate.setJobPosting(postingA);
+        candidate.setResumeFileUrl("http://cloudinary.com/status-history.pdf");
+        candidate.setResumeStatus(ResumeStatus.PENDING);
+        candidate.setPipelineStatus(PipelineStatus.SHORTLISTED);
+        candidate = candidateRepository.saveAndFlush(candidate);
+
+        // Add history logs manually with distinct timestamps
+        CandidateStatusLog log1 = new CandidateStatusLog();
+        log1.setCandidate(candidate);
+        log1.setChangedBy(recruiterA);
+        log1.setFromStatus(PipelineStatus.NEW);
+        log1.setToStatus(PipelineStatus.REVIEWING);
+        log1.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC).minusMinutes(10));
+        candidateStatusLogRepository.saveAndFlush(log1);
+
+        CandidateStatusLog log2 = new CandidateStatusLog();
+        log2.setCandidate(candidate);
+        log2.setChangedBy(recruiterA);
+        log2.setFromStatus(PipelineStatus.REVIEWING);
+        log2.setToStatus(PipelineStatus.SHORTLISTED);
+        log2.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
+        candidateStatusLogRepository.saveAndFlush(log2);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        mockMvc.perform(get("/api/candidates/" + candidate.getId() + "/status-log")
+                        .header("Authorization", "Bearer tokenA"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                // Newest first (log2)
+                .andExpect(jsonPath("$[0].fromStatus").value("reviewing"))
+                .andExpect(jsonPath("$[0].toStatus").value("shortlisted"))
+                .andExpect(jsonPath("$[0].changedByEmail").value(recruiterA.getEmail()))
+                // Oldest last (log1)
+                .andExpect(jsonPath("$[1].fromStatus").value("new"))
+                .andExpect(jsonPath("$[1].toStatus").value("reviewing"))
+                .andExpect(jsonPath("$[1].changedByEmail").value(recruiterA.getEmail()));
     }
 }
