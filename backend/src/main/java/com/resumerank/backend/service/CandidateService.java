@@ -313,6 +313,18 @@ public class CandidateService {
         return new CandidateListResponse(items, nextCursor);
     }
 
+    @Transactional(readOnly = true)
+    public CandidateResponse getCandidateDetail(UUID userId, UUID candidateId) {
+        Candidate candidate = candidateRepository.findByIdWithJobPostingAndScore(candidateId)
+                .orElseThrow(() -> new ResourceNotFoundException("Candidate not found"));
+
+        if (!candidate.getJobPosting().getUser().getId().equals(userId)) {
+            throw new ResourceNotFoundException("Candidate not found");
+        }
+
+        return mapToResponse(candidate);
+    }
+
     @Async
     public void processCandidateResumeAsync(UUID candidateId) {
         Candidate candidate = candidateRepository.findByIdWithJobPosting(candidateId).orElse(null);
@@ -370,10 +382,32 @@ public class CandidateService {
     }
 
     private CandidateResponse mapToResponse(Candidate candidate) {
-        Integer overallScore = candidate.getCandidateScore() != null 
-                ? candidate.getCandidateScore().getOverallScore() 
-                : null;
-        return new CandidateResponse(
+        Integer overallScore = null;
+        Integer skillsScore = null;
+        Integer experienceScore = null;
+        Integer seniorityScore = null;
+        java.util.List<String> matchedSkills = null;
+        java.util.List<String> missingSkills = null;
+        String summary = null;
+        java.math.BigDecimal yearsExperienceDetected = null;
+
+        CandidateScore score = candidate.getCandidateScore();
+        if (score != null) {
+            overallScore = score.getOverallScore();
+            skillsScore = score.getSkillsScore();
+            experienceScore = score.getExperienceScore();
+            seniorityScore = score.getSeniorityScore();
+            if (score.getMatchedSkills() != null) {
+                matchedSkills = java.util.Arrays.asList(score.getMatchedSkills());
+            }
+            if (score.getMissingSkills() != null) {
+                missingSkills = java.util.Arrays.asList(score.getMissingSkills());
+            }
+            summary = score.getSummary();
+            yearsExperienceDetected = score.getYearsExperienceDetected();
+        }
+
+        CandidateResponse response = new CandidateResponse(
                 candidate.getId(),
                 candidate.getJobPosting().getId(),
                 candidate.getName(),
@@ -386,6 +420,14 @@ public class CandidateService {
                 candidate.getUpdatedAt(),
                 overallScore
         );
+        response.setSkillsScore(skillsScore);
+        response.setExperienceScore(experienceScore);
+        response.setSeniorityScore(seniorityScore);
+        response.setMatchedSkills(matchedSkills);
+        response.setMissingSkills(missingSkills);
+        response.setSummary(summary);
+        response.setYearsExperienceDetected(yearsExperienceDetected);
+        return response;
     }
 
     public static class ProcessResumeRequest {

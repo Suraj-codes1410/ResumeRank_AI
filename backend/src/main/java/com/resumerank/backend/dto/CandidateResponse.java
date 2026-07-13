@@ -23,6 +23,8 @@ public class CandidateResponse {
     private Integer seniorityScore;
     private java.util.List<String> matchedSkills;
     private java.util.List<String> missingSkills;
+    private String summary;
+    private java.math.BigDecimal yearsExperienceDetected;
 
     public CandidateResponse() {
     }
@@ -210,5 +212,21 @@ public class CandidateResponse {
 
     public void setMissingSkills(java.util.List<String> missingSkills) {
         this.missingSkills = missingSkills;
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public void setSummary(String summary) {
+        this.summary = summary;
+    }
+
+    public java.math.BigDecimal getYearsExperienceDetected() {
+        return yearsExperienceDetected;
+    }
+
+    public void setYearsExperienceDetected(java.math.BigDecimal yearsExperienceDetected) {
+        this.yearsExperienceDetected = yearsExperienceDetected;
     }
 }

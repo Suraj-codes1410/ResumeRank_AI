@@ -14,6 +14,9 @@ public interface CandidateRepository extends JpaRepository<Candidate, UUID> {
     @Query("SELECT c FROM Candidate c JOIN FETCH c.jobPosting WHERE c.id = :id")
     Optional<Candidate> findByIdWithJobPosting(@Param("id") UUID id);
 
+    @Query("SELECT c FROM Candidate c JOIN FETCH c.jobPosting LEFT JOIN FETCH c.candidateScore WHERE c.id = :id")
+    Optional<Candidate> findByIdWithJobPostingAndScore(@Param("id") UUID id);
+
     @Query("SELECT c FROM Candidate c LEFT JOIN FETCH c.candidateScore WHERE c.jobPosting.id = :jobPostingId")
     java.util.List<Candidate> findByJobPostingIdWithScore(@Param("jobPostingId") UUID jobPostingId);
 
