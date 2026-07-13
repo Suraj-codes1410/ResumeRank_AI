@@ -5,15 +5,21 @@ import com.resumerank.backend.dto.CandidateResponse;
 import com.resumerank.backend.dto.AiWebhookPayload;
 import com.resumerank.backend.dto.CandidateListResponse;
 import com.resumerank.backend.dto.KeysetCursor;
+import com.resumerank.backend.dto.CandidateStatusUpdateRequest;
+import com.resumerank.backend.dto.CandidateStatusLogResponse;
 import com.resumerank.backend.entity.Candidate;
 import com.resumerank.backend.entity.CandidateScore;
 import com.resumerank.backend.entity.JobPosting;
 import com.resumerank.backend.entity.PipelineStatus;
 import com.resumerank.backend.entity.ResumeStatus;
+import com.resumerank.backend.entity.CandidateStatusLog;
+import com.resumerank.backend.entity.User;
 import com.resumerank.backend.exception.ResourceNotFoundException;
 import com.resumerank.backend.repository.CandidateRepository;
 import com.resumerank.backend.repository.CandidateScoreRepository;
 import com.resumerank.backend.repository.JobPostingRepository;
+import com.resumerank.backend.repository.CandidateStatusLogRepository;
+import com.resumerank.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -37,6 +43,12 @@ public class CandidateService {
 
     @Autowired
     private JobPostingRepository jobPostingRepository;
+
+    @Autowired
+    private CandidateStatusLogRepository candidateStatusLogRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -323,6 +335,67 @@ public class CandidateService {
         }
 
         return mapToResponse(candidate);
+    }
+
+    @Transactional
+    public CandidateResponse updateCandidateStatus(UUID userId, UUID candidateId, CandidateStatusUpdateRequest request) {
+        Candidate candidate = candidateRepository.findByIdWithJobPostingAndScore(candidateId)
+                .orElseThrow(() -> new ResourceNotFoundException("Candidate not found"));
+
+        if (!candidate.getJobPosting().getUser().getId().equals(userId)) {
+            throw new ResourceNotFoundException("Candidate not found");
+        }
+
+        PipelineStatus newStatus;
+        try {
+            newStatus = PipelineStatus.valueOf(request.getStatus().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid status: " + request.getStatus());
+        }
+
+        PipelineStatus oldStatus = candidate.getPipelineStatus();
+
+        if (oldStatus != newStatus) {
+            candidate.setPipelineStatus(newStatus);
+            candidateRepository.saveAndFlush(candidate);
+
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+            CandidateStatusLog log = new CandidateStatusLog();
+            log.setCandidate(candidate);
+            log.setChangedBy(user);
+            log.setFromStatus(oldStatus);
+            log.setToStatus(newStatus);
+            candidateStatusLogRepository.saveAndFlush(log);
+        }
+
+        return mapToResponse(candidate);
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<CandidateStatusLogResponse> getCandidateStatusLog(UUID userId, UUID candidateId) {
+        Candidate candidate = candidateRepository.findByIdWithJobPosting(candidateId)
+                .orElseThrow(() -> new ResourceNotFoundException("Candidate not found"));
+
+        if (!candidate.getJobPosting().getUser().getId().equals(userId)) {
+            throw new ResourceNotFoundException("Candidate not found");
+        }
+
+        java.util.List<CandidateStatusLog> logs = candidateStatusLogRepository.findByCandidateIdOrderByCreatedAtDesc(candidateId);
+        java.util.List<CandidateStatusLogResponse> responses = new java.util.ArrayList<>();
+
+        for (CandidateStatusLog log : logs) {
+            responses.add(new CandidateStatusLogResponse(
+                    log.getId(),
+                    log.getFromStatus().name().toLowerCase(),
+                    log.getToStatus().name().toLowerCase(),
+                    log.getChangedBy().getEmail(),
+                    log.getCreatedAt()
+            ));
+        }
+
+        return responses;
     }
 
     @Async

@@ -27,4 +27,24 @@ public class CandidateDetailController {
         CandidateResponse response = candidateService.getCandidateDetail(authenticatedUserId, candidateId);
         return ResponseEntity.ok(response);
     }
+
+    @org.springframework.web.bind.annotation.PatchMapping("/{candidateId}/status")
+    public ResponseEntity<CandidateResponse> updateCandidateStatus(
+            @PathVariable("candidateId") UUID candidateId,
+            @jakarta.validation.Valid @org.springframework.web.bind.annotation.RequestBody com.resumerank.backend.dto.CandidateStatusUpdateRequest request,
+            HttpServletRequest servletRequest) {
+        UUID authenticatedUserId = (UUID) servletRequest.getAttribute("authenticatedUserId");
+        CandidateResponse response = candidateService.updateCandidateStatus(authenticatedUserId, candidateId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{candidateId}/status-log")
+    public ResponseEntity<java.util.List<com.resumerank.backend.dto.CandidateStatusLogResponse>> getCandidateStatusLog(
+            @PathVariable("candidateId") UUID candidateId,
+            HttpServletRequest servletRequest) {
+        UUID authenticatedUserId = (UUID) servletRequest.getAttribute("authenticatedUserId");
+        java.util.List<com.resumerank.backend.dto.CandidateStatusLogResponse> response =
+                candidateService.getCandidateStatusLog(authenticatedUserId, candidateId);
+        return ResponseEntity.ok(response);
+    }
 }
