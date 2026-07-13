@@ -11,7 +11,13 @@ export async function GET(
     const authHeader = request.headers.get('Authorization') || request.headers.get('authorization') || '';
     const { id } = await params;
 
-    const response = await axios.get(`${BACKEND_URL}/api/job-postings/${id}/candidates`, {
+    const { searchParams } = new URL(request.url);
+    const queryString = searchParams.toString();
+    const targetUrl = queryString 
+      ? `${BACKEND_URL}/api/job-postings/${id}/candidates?${queryString}` 
+      : `${BACKEND_URL}/api/job-postings/${id}/candidates`;
+
+    const response = await axios.get(targetUrl, {
       headers: {
         'Authorization': authHeader,
         'Content-Type': 'application/json',

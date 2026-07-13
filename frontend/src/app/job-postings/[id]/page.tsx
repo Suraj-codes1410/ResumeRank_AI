@@ -92,7 +92,7 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
           Authorization: `Bearer ${accessToken}`,
         },
       });
-      return response.data;
+      return response.data.items;
     },
     enabled: !!accessToken && !!id,
     refetchInterval: (query) => {

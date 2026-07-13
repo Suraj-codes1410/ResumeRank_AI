@@ -110,7 +110,7 @@ describe('JobPostingDetailPage Edit & Upload Tests', () => {
     // Mock GET call to return existing job posting details and empty candidates
     vi.mocked(apiClient.get).mockImplementation(async (url) => {
       if (url.includes('/candidates')) {
-        return { data: [] };
+        return { data: { items: [] } };
       }
       return {
         data: {
@@ -198,7 +198,7 @@ describe('JobPostingDetailPage Edit & Upload Tests', () => {
     // 1. Mock GET calls
     vi.mocked(apiClient.get).mockImplementation(async (url) => {
       if (url.includes('/candidates')) {
-        return { data: [] }; // Initial empty candidate list
+        return { data: { items: [] } }; // Initial empty candidate list
       }
       return {
         data: {
@@ -307,7 +307,7 @@ describe('JobPostingDetailPage Edit & Upload Tests', () => {
     // Now mock candidate list query to return the pending candidate (triggers polling loop)
     vi.mocked(apiClient.get).mockImplementation(async (url) => {
       if (url.includes('/candidates')) {
-        return { data: [mockPendingCandidate] };
+        return { data: { items: [mockPendingCandidate] } };
       }
       return { data: { id: 'posting-123', title: 'Original Title' } };
     });
@@ -330,7 +330,7 @@ describe('JobPostingDetailPage Edit & Upload Tests', () => {
 
     vi.mocked(apiClient.get).mockImplementation(async (url) => {
       if (url.includes('/candidates')) {
-        return { data: [mockScoredCandidate] };
+        return { data: { items: [mockScoredCandidate] } };
       }
       return { data: { id: 'posting-123', title: 'Original Title' } };
     });
