@@ -134,16 +134,20 @@ class CandidateControllerTest {
                 85
         );
 
-        Mockito.when(candidateService.getCandidatesForJobPosting(eq(mockUserId), eq(mockJobPostingId)))
-                .thenReturn(java.util.List.of(response));
+        com.resumerank.backend.dto.CandidateListResponse listResponse =
+                new com.resumerank.backend.dto.CandidateListResponse(java.util.List.of(response), null);
+
+        Mockito.when(candidateService.getCandidatesList(
+                eq(mockUserId), eq(mockJobPostingId), any(), any(), any(), any(), any(), any(), any()
+        )).thenReturn(listResponse);
 
         mockMvc.perform(get("/api/job-postings/" + mockJobPostingId + "/candidates")
                         .header("Authorization", "Bearer " + mockToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].jobPostingId").value(mockJobPostingId.toString()))
-                .andExpect(jsonPath("$[0].name").value("John Doe"))
-                .andExpect(jsonPath("$[0].overallScore").value(85))
-                .andExpect(jsonPath("$[0].resumeStatus").value("SCORED"));
+                .andExpect(jsonPath("$.items[0].jobPostingId").value(mockJobPostingId.toString()))
+                .andExpect(jsonPath("$.items[0].name").value("John Doe"))
+                .andExpect(jsonPath("$.items[0].overallScore").value(85))
+                .andExpect(jsonPath("$.items[0].resumeStatus").value("SCORED"));
     }
 
     @Test
