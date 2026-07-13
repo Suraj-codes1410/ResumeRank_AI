@@ -20,16 +20,35 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+
 import java.util.UUID;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 @SpringBootTest
+@AutoConfigureMockMvc
 @Transactional
 class CandidateListIntegrationTest {
 
     @Autowired
+    private MockMvc mockMvc;
+
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.resumerank.backend.service.JwtService jwtService;
+
+    @Autowired
     private CandidateService candidateService;
+
+    @Autowired
+    private jakarta.persistence.EntityManager entityManager;
+
+    @Autowired
+    private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     @Autowired
     private UserRepository userRepository;
@@ -202,5 +221,115 @@ class CandidateListIntegrationTest {
                     10
             );
         });
+    }
+
+    private void stubJwt(String token, UUID userId, String email) {
+        com.auth0.jwt.interfaces.DecodedJWT decodedJWT = org.mockito.Mockito.mock(com.auth0.jwt.interfaces.DecodedJWT.class);
+        org.mockito.Mockito.when(decodedJWT.getSubject()).thenReturn(userId.toString());
+
+        com.auth0.jwt.interfaces.Claim emailClaim = org.mockito.Mockito.mock(com.auth0.jwt.interfaces.Claim.class);
+        org.mockito.Mockito.when(emailClaim.asString()).thenReturn(email);
+        org.mockito.Mockito.when(decodedJWT.getClaim("email")).thenReturn(emailClaim);
+
+        com.auth0.jwt.interfaces.Claim typeClaim = org.mockito.Mockito.mock(com.auth0.jwt.interfaces.Claim.class);
+        org.mockito.Mockito.when(typeClaim.asString()).thenReturn("access");
+        org.mockito.Mockito.when(decodedJWT.getClaim("type")).thenReturn(typeClaim);
+
+        org.mockito.Mockito.when(jwtService.verifyToken(token)).thenReturn(decodedJWT);
+    }
+
+    @Test
+    void getCandidateDetail_Owner_ReturnsFullDetailsWithSummaryAndExperience() throws Exception {
+        stubJwt("tokenA", recruiterA.getId(), recruiterA.getEmail());
+
+        Candidate candidate = new Candidate();
+        candidate.setJobPosting(postingA);
+        candidate.setResumeFileUrl("http://cloudinary.com/detail.pdf");
+        candidate.setResumeStatus(ResumeStatus.SCORED);
+        candidate.setPipelineStatus(PipelineStatus.NEW);
+        candidate = candidateRepository.saveAndFlush(candidate);
+
+        CandidateScore score = new CandidateScore();
+        score.setCandidate(candidate);
+        score.setOverallScore(85);
+        score.setSkillsScore(90);
+        score.setExperienceScore(80);
+        score.setSeniorityScore(85);
+        score.setSummary("An excellent Java Engineer.");
+        score.setYearsExperienceDetected(java.math.BigDecimal.valueOf(4.5));
+        score.setScoredAt(OffsetDateTime.now(ZoneOffset.UTC));
+        candidateScoreRepository.saveAndFlush(score);
+
+        candidate.setCandidateScore(score);
+        candidateRepository.saveAndFlush(candidate);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        mockMvc.perform(get("/api/candidates/" + candidate.getId())
+                        .header("Authorization", "Bearer tokenA"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(candidate.getId().toString()))
+                .andExpect(jsonPath("$.overallScore").value(85))
+                .andExpect(jsonPath("$.skillsScore").value(90))
+                .andExpect(jsonPath("$.summary").value("An excellent Java Engineer."))
+                .andExpect(jsonPath("$.yearsExperienceDetected").value(4.5));
+    }
+
+    @Test
+    void getCandidateDetail_UnauthorizedAndNonExistent_MatchExactly() throws Exception {
+        stubJwt("tokenB", recruiterB.getId(), recruiterB.getEmail());
+
+        // Create a candidate for postingA (owned by recruiterA)
+        Candidate candidate = new Candidate();
+        candidate.setJobPosting(postingA);
+        candidate.setResumeFileUrl("http://cloudinary.com/unauth.pdf");
+        candidate.setResumeStatus(ResumeStatus.PENDING);
+        candidate = candidateRepository.saveAndFlush(candidate);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // Fetch candidate detail as recruiterB (should return 404 because recruiterB doesn't own postingA)
+        String unauthResponse = mockMvc.perform(get("/api/candidates/" + candidate.getId())
+                        .header("Authorization", "Bearer tokenB"))
+                .andExpect(status().isNotFound())
+                .andReturn().getResponse().getContentAsString();
+
+        // Fetch a genuinely nonexistent candidate ID
+        UUID nonexistentId = UUID.randomUUID();
+        String nonexistentResponse = mockMvc.perform(get("/api/candidates/" + nonexistentId)
+                        .header("Authorization", "Bearer tokenB"))
+                .andExpect(status().isNotFound())
+                .andReturn().getResponse().getContentAsString();
+
+        // Deserialize to maps and remove the 'instance' key to compare the rest of the shape exactly
+        java.util.Map<String, Object> map1 = objectMapper.readValue(unauthResponse, java.util.Map.class);
+        java.util.Map<String, Object> map2 = objectMapper.readValue(nonexistentResponse, java.util.Map.class);
+        map1.remove("instance");
+        map2.remove("instance");
+
+        Assertions.assertEquals(map2, map1);
+    }
+
+    @Test
+    void getCandidateDetail_FailedResumeStatus_IncludesParseError() throws Exception {
+        stubJwt("tokenA", recruiterA.getId(), recruiterA.getEmail());
+
+        Candidate candidate = new Candidate();
+        candidate.setJobPosting(postingA);
+        candidate.setResumeFileUrl("http://cloudinary.com/failed.pdf");
+        candidate.setResumeStatus(ResumeStatus.FAILED);
+        candidate.setParseError("Could not extract text from document");
+        candidate = candidateRepository.saveAndFlush(candidate);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        mockMvc.perform(get("/api/candidates/" + candidate.getId())
+                        .header("Authorization", "Bearer tokenA"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resumeStatus").value("FAILED"))
+                .andExpect(jsonPath("$.parseError").value("Could not extract text from document"));
     }
 }
