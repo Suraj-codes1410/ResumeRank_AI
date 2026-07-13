@@ -18,6 +18,11 @@ public class CandidateResponse {
     private OffsetDateTime updatedAt;
     private Integer overallScore;
     private UUID duplicateOfCandidateId;
+    private Integer skillsScore;
+    private Integer experienceScore;
+    private Integer seniorityScore;
+    private java.util.List<String> matchedSkills;
+    private java.util.List<String> missingSkills;
 
     public CandidateResponse() {
     }
@@ -165,5 +170,45 @@ public class CandidateResponse {
 
     public void setDuplicateOfCandidateId(UUID duplicateOfCandidateId) {
         this.duplicateOfCandidateId = duplicateOfCandidateId;
+    }
+
+    public Integer getSkillsScore() {
+        return skillsScore;
+    }
+
+    public void setSkillsScore(Integer skillsScore) {
+        this.skillsScore = skillsScore;
+    }
+
+    public Integer getExperienceScore() {
+        return experienceScore;
+    }
+
+    public void setExperienceScore(Integer experienceScore) {
+        this.experienceScore = experienceScore;
+    }
+
+    public Integer getSeniorityScore() {
+        return seniorityScore;
+    }
+
+    public void setSeniorityScore(Integer seniorityScore) {
+        this.seniorityScore = seniorityScore;
+    }
+
+    public java.util.List<String> getMatchedSkills() {
+        return matchedSkills;
+    }
+
+    public void setMatchedSkills(java.util.List<String> matchedSkills) {
+        this.matchedSkills = matchedSkills;
+    }
+
+    public java.util.List<String> getMissingSkills() {
+        return missingSkills;
+    }
+
+    public void setMissingSkills(java.util.List<String> missingSkills) {
+        this.missingSkills = missingSkills;
     }
 }

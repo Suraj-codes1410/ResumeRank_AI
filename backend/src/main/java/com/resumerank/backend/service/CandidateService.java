@@ -3,6 +3,8 @@ package com.resumerank.backend.service;
 import com.resumerank.backend.dto.CandidateCreateRequest;
 import com.resumerank.backend.dto.CandidateResponse;
 import com.resumerank.backend.dto.AiWebhookPayload;
+import com.resumerank.backend.dto.CandidateListResponse;
+import com.resumerank.backend.dto.KeysetCursor;
 import com.resumerank.backend.entity.Candidate;
 import com.resumerank.backend.entity.CandidateScore;
 import com.resumerank.backend.entity.JobPosting;
@@ -48,6 +50,12 @@ public class CandidateService {
     @Autowired
     @org.springframework.context.annotation.Lazy
     private CandidateService self;
+
+    @jakarta.persistence.PersistenceContext
+    private jakarta.persistence.EntityManager entityManager;
+
+    @Autowired
+    private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     @Transactional
     public CandidateResponse createCandidate(UUID userId, UUID jobPostingId, CandidateCreateRequest request) {
@@ -95,6 +103,214 @@ public class CandidateService {
         return candidateRepository.findByJobPostingIdWithScore(jobPostingId).stream()
                 .map(this::mapToResponse)
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public CandidateListResponse getCandidatesList(
+            UUID userId,
+            UUID jobPostingId,
+            String sort,
+            Integer minScore,
+            String skill,
+            String search,
+            String resumeStatus,
+            String cursor,
+            Integer limit) {
+        
+        JobPosting jobPosting = jobPostingRepository.findById(jobPostingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Job posting not found"));
+
+        if (!jobPosting.getUser().getId().equals(userId)) {
+            throw new ResourceNotFoundException("Job posting not found");
+        }
+
+        int queryLimit = (limit == null || limit <= 0) ? 25 : Math.min(limit, 100);
+
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT c.id, c.name, c.email, c.resume_file_url, c.resume_status, c.pipeline_status, ")
+           .append("c.created_at, c.updated_at, c.parse_error, ")
+           .append("cs.overall_score, cs.skills_score, cs.experience_score, cs.seniority_score, cs.matched_skills, cs.missing_skills ")
+           .append("FROM candidates c ")
+           .append("LEFT JOIN candidate_scores cs ON c.id = cs.candidate_id ")
+           .append("WHERE c.job_posting_id = :jobPostingId AND c.deleted_at IS NULL ");
+
+        java.util.Map<String, Object> params = new java.util.HashMap<>();
+        params.put("jobPostingId", jobPostingId);
+
+        if (minScore != null) {
+            sql.append("AND cs.overall_score >= :minScore ");
+            params.put("minScore", minScore);
+        }
+
+        if (skill != null && !skill.isBlank()) {
+            sql.append("AND EXISTS (SELECT 1 FROM unnest(cs.matched_skills) s WHERE LOWER(s) = LOWER(:skill)) ");
+            params.put("skill", skill);
+        }
+
+        if (search != null && !search.isBlank()) {
+            sql.append("AND LOWER(c.name) LIKE LOWER(:search) ");
+            params.put("search", "%" + search + "%");
+        }
+
+        if (resumeStatus != null && !resumeStatus.isBlank()) {
+            sql.append("AND c.resume_status = :resumeStatus ");
+            params.put("resumeStatus", resumeStatus);
+        }
+
+        KeysetCursor decodedCursor = null;
+        if (cursor != null && !cursor.isBlank()) {
+            try {
+                byte[] decodedBytes = java.util.Base64.getUrlDecoder().decode(cursor);
+                decodedCursor = objectMapper.readValue(decodedBytes, KeysetCursor.class);
+            } catch (Exception e) {
+                // Ignore invalid cursor
+            }
+        }
+
+        String sortType = (sort == null || sort.isBlank()) ? "score_desc" : sort;
+        if (decodedCursor != null) {
+            UUID lastId = decodedCursor.getId();
+            String lastSortVal = decodedCursor.getSortValue();
+
+            if ("score_desc".equals(sortType)) {
+                if (lastSortVal != null && !"null".equals(lastSortVal)) {
+                    int lastScore = Integer.parseInt(lastSortVal);
+                    sql.append("AND (cs.overall_score < :lastScore OR (cs.overall_score = :lastScore AND c.id < :lastId) OR cs.overall_score IS NULL) ");
+                    params.put("lastScore", lastScore);
+                    params.put("lastId", lastId);
+                } else {
+                    sql.append("AND (cs.overall_score IS NULL AND c.id < :lastId) ");
+                    params.put("lastId", lastId);
+                }
+            } else if ("score_asc".equals(sortType)) {
+                if (lastSortVal != null && !"null".equals(lastSortVal)) {
+                    int lastScore = Integer.parseInt(lastSortVal);
+                    sql.append("AND ((cs.overall_score > :lastScore AND cs.overall_score IS NOT NULL) OR (cs.overall_score = :lastScore AND c.id > :lastId) OR cs.overall_score IS NULL) ");
+                    params.put("lastScore", lastScore);
+                    params.put("lastId", lastId);
+                } else {
+                    sql.append("AND (cs.overall_score IS NULL AND c.id > :lastId) ");
+                    params.put("lastId", lastId);
+                }
+            } else if ("newest".equals(sortType)) {
+                java.time.OffsetDateTime lastCreated = java.time.OffsetDateTime.parse(lastSortVal);
+                sql.append("AND (c.created_at < :lastCreated OR (c.created_at = :lastCreated AND c.id < :lastId)) ");
+                params.put("lastCreated", lastCreated);
+                params.put("lastId", lastId);
+            } else if ("oldest".equals(sortType)) {
+                java.time.OffsetDateTime lastCreated = java.time.OffsetDateTime.parse(lastSortVal);
+                sql.append("AND (c.created_at > :lastCreated OR (c.created_at = :lastCreated AND c.id > :lastId)) ");
+                params.put("lastCreated", lastCreated);
+                params.put("lastId", lastId);
+            }
+        }
+
+        if ("score_desc".equals(sortType)) {
+            sql.append("ORDER BY cs.overall_score DESC NULLS LAST, c.id DESC ");
+        } else if ("score_asc".equals(sortType)) {
+            sql.append("ORDER BY cs.overall_score ASC NULLS LAST, c.id ASC ");
+        } else if ("newest".equals(sortType)) {
+            sql.append("ORDER BY c.created_at DESC, c.id DESC ");
+        } else if ("oldest".equals(sortType)) {
+            sql.append("ORDER BY c.created_at ASC, c.id ASC ");
+        }
+
+        sql.append("LIMIT :limit ");
+        params.put("limit", queryLimit);
+
+        jakarta.persistence.Query query = entityManager.createNativeQuery(sql.toString());
+        for (java.util.Map.Entry<String, Object> entry : params.entrySet()) {
+            query.setParameter(entry.getKey(), entry.getValue());
+        }
+
+        java.util.List<Object[]> resultList = query.getResultList();
+        java.util.List<CandidateResponse> items = new java.util.ArrayList<>();
+
+        for (Object[] row : resultList) {
+            UUID id = (UUID) row[0];
+            String name = (String) row[1];
+            String email = (String) row[2];
+            String resumeFileUrl = (String) row[3];
+            ResumeStatus resumeStatusEnum = ResumeStatus.valueOf((String) row[4]);
+            PipelineStatus pipelineStatusEnum = PipelineStatus.valueOf((String) row[5]);
+
+            java.time.OffsetDateTime createdAt = null;
+            if (row[6] instanceof java.sql.Timestamp) {
+                createdAt = ((java.sql.Timestamp) row[6]).toInstant().atOffset(java.time.ZoneOffset.UTC);
+            } else if (row[6] instanceof java.time.OffsetDateTime) {
+                createdAt = (java.time.OffsetDateTime) row[6];
+            }
+
+            java.time.OffsetDateTime updatedAt = null;
+            if (row[7] instanceof java.sql.Timestamp) {
+                updatedAt = ((java.sql.Timestamp) row[7]).toInstant().atOffset(java.time.ZoneOffset.UTC);
+            } else if (row[7] instanceof java.time.OffsetDateTime) {
+                updatedAt = (java.time.OffsetDateTime) row[7];
+            }
+
+            String parseError = (String) row[8];
+            Integer overallScore = (Integer) row[9];
+            Integer skillsScore = (Integer) row[10];
+            Integer experienceScore = (Integer) row[11];
+            Integer seniorityScore = (Integer) row[12];
+
+            java.util.List<String> matchedSkills = null;
+            java.util.List<String> missingSkills = null;
+
+            try {
+                java.sql.Array matchedArr = (java.sql.Array) row[13];
+                if (matchedArr != null) {
+                    matchedSkills = java.util.Arrays.asList((String[]) matchedArr.getArray());
+                }
+                java.sql.Array missingArr = (java.sql.Array) row[14];
+                if (missingArr != null) {
+                    missingSkills = java.util.Arrays.asList((String[]) missingArr.getArray());
+                }
+            } catch (Exception e) {
+                // Ignore conversion errors
+            }
+
+            CandidateResponse response = new CandidateResponse();
+            response.setId(id);
+            response.setJobPostingId(jobPostingId);
+            response.setName(name);
+            response.setEmail(email);
+            response.setResumeFileUrl(resumeFileUrl);
+            response.setResumeStatus(resumeStatusEnum);
+            response.setPipelineStatus(pipelineStatusEnum);
+            response.setCreatedAt(createdAt);
+            response.setUpdatedAt(updatedAt);
+            response.setParseError(parseError);
+            response.setOverallScore(overallScore);
+            response.setSkillsScore(skillsScore);
+            response.setExperienceScore(experienceScore);
+            response.setSeniorityScore(seniorityScore);
+            response.setMatchedSkills(matchedSkills);
+            response.setMissingSkills(missingSkills);
+
+            items.add(response);
+        }
+
+        String nextCursor = null;
+        if (items.size() == queryLimit) {
+            CandidateResponse lastItem = items.get(items.size() - 1);
+            String lastSortVal = null;
+            if ("score_desc".equals(sortType) || "score_asc".equals(sortType)) {
+                lastSortVal = lastItem.getOverallScore() != null ? lastItem.getOverallScore().toString() : "null";
+            } else {
+                lastSortVal = lastItem.getCreatedAt().toString();
+            }
+
+            KeysetCursor cursorObj = new KeysetCursor(lastItem.getId(), lastSortVal, sortType);
+            try {
+                byte[] bytes = objectMapper.writeValueAsBytes(cursorObj);
+                nextCursor = java.util.Base64.getUrlEncoder().encodeToString(bytes);
+            } catch (Exception e) {
+                // Ignore serialization error
+            }
+        }
+
+        return new CandidateListResponse(items, nextCursor);
     }
 
     @Async

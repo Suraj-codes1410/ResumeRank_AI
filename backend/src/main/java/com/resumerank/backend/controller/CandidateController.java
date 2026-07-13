@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.resumerank.backend.dto.CandidateListResponse;
 import java.util.UUID;
 
 @RestController
@@ -36,11 +36,20 @@ public class CandidateController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CandidateResponse>> getCandidates(
+    public ResponseEntity<CandidateListResponse> getCandidates(
             @PathVariable("jobPostingId") UUID jobPostingId,
+            @org.springframework.web.bind.annotation.RequestParam(value = "sort", defaultValue = "score_desc") String sort,
+            @org.springframework.web.bind.annotation.RequestParam(value = "minScore", required = false) Integer minScore,
+            @org.springframework.web.bind.annotation.RequestParam(value = "skill", required = false) String skill,
+            @org.springframework.web.bind.annotation.RequestParam(value = "search", required = false) String search,
+            @org.springframework.web.bind.annotation.RequestParam(value = "resumeStatus", required = false) String resumeStatus,
+            @org.springframework.web.bind.annotation.RequestParam(value = "cursor", required = false) String cursor,
+            @org.springframework.web.bind.annotation.RequestParam(value = "limit", defaultValue = "25") Integer limit,
             HttpServletRequest servletRequest) {
         UUID authenticatedUserId = (UUID) servletRequest.getAttribute("authenticatedUserId");
-        List<CandidateResponse> responses = candidateService.getCandidatesForJobPosting(authenticatedUserId, jobPostingId);
-        return ResponseEntity.ok(responses);
+        CandidateListResponse response = candidateService.getCandidatesList(
+                authenticatedUserId, jobPostingId, sort, minScore, skill, search, resumeStatus, cursor, limit
+        );
+        return ResponseEntity.ok(response);
     }
 }
