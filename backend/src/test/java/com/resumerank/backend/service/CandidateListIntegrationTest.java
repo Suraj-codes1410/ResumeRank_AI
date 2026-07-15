@@ -313,6 +313,8 @@ class CandidateListIntegrationTest {
         java.util.Map<String, Object> map2 = objectMapper.readValue(nonexistentResponse, java.util.Map.class);
         map1.remove("instance");
         map2.remove("instance");
+        map1.remove("timestamp");
+        map2.remove("timestamp");
 
         Assertions.assertEquals(map2, map1);
     }

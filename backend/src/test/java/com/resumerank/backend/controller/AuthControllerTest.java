@@ -136,7 +136,11 @@ class AuthControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andReturn().getResponse().getContentAsString();
 
-        org.junit.jupiter.api.Assertions.assertEquals(wrongPasswordJson, nonexistentEmailJson);
+        java.util.Map<String, Object> map1 = objectMapper.readValue(wrongPasswordJson, java.util.Map.class);
+        java.util.Map<String, Object> map2 = objectMapper.readValue(nonexistentEmailJson, java.util.Map.class);
+        map1.remove("timestamp");
+        map2.remove("timestamp");
+        org.junit.jupiter.api.Assertions.assertEquals(map1, map2);
     }
 
     @Test
