@@ -53,6 +53,31 @@ interface Candidate {
   updatedAt: string;
 }
 
+interface BatchFile {
+  id: string;
+  name: string;
+  size: number;
+  status: 'validating' | 'uploading' | 'pending' | 'parsing' | 'scored' | 'failed' | 'rejected';
+  progress: number;
+  error: string | null;
+  candidateId: string | null;
+}
+
+const runWithConcurrency = async (tasks: (() => Promise<void>)[], limit: number = 3) => {
+  const executing: Promise<any>[] = [];
+  for (const task of tasks) {
+    const p = Promise.resolve().then(() => task());
+    if (limit <= tasks.length) {
+      const e: Promise<any> = p.then(() => executing.splice(executing.indexOf(e), 1));
+      executing.push(e);
+      if (executing.length >= limit) {
+        await Promise.race(executing);
+      }
+    }
+  }
+  return Promise.all(executing);
+};
+
 export default function JobPostingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { accessToken } = useAuth();
@@ -65,8 +90,8 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [batchFiles, setBatchFiles] = useState<BatchFile[]>([]);
+  const [activeCandidateIds, setActiveCandidateIds] = useState<string[]>([]);
 
   // Fetch job posting details
   const { data, status, error, refetch } = useQuery<JobPosting>({
@@ -99,7 +124,7 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
       const list = query.state.data as Candidate[] | undefined;
       if (!list || list.length === 0) return false;
       const hasActive = list.some(
-        (c) => c.resumeStatus === 'PENDING' || c.resumeStatus === 'PARSING'
+        (c) => (c.resumeStatus === 'PENDING' || c.resumeStatus === 'PARSING') || activeCandidateIds.includes(c.id)
       );
       return hasActive ? 3000 : false;
     },
@@ -189,13 +214,10 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
     },
   });
 
-  // Cloudinary Direct Upload + Create Candidate Mutation
-  const uploadMutation = useMutation({
-    mutationFn: async (file: File) => {
-      setUploadError(null);
-      setUploadProgress(0);
+  const uploadFile = async (fileObj: BatchFile, nativeFile: File) => {
+    setBatchFiles(prev => prev.map(f => f.id === fileObj.id ? { ...f, status: 'uploading', progress: 0 } : f));
 
-      // 1. Fetch secure sign properties
+    try {
       const sigResponse = await apiClient.post('/uploads/signature', {}, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -204,9 +226,8 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
 
       const { signature, timestamp, apiKey, cloudName, folder } = sigResponse.data;
 
-      // 2. Upload file directly to Cloudinary
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', nativeFile);
       formData.append('api_key', apiKey);
       formData.append('timestamp', timestamp.toString());
       formData.append('signature', signature);
@@ -222,7 +243,7 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
           },
           onUploadProgress: (progressEvent) => {
             const percent = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1));
-            setUploadProgress(percent);
+            setBatchFiles(prev => prev.map(f => f.id === fileObj.id ? { ...f, progress: percent } : f));
           },
         }
       );
@@ -231,7 +252,6 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
       const rawEtag = uploadResponse.data.etag;
       const cleanEtag = rawEtag ? rawEtag.replace(/"/g, '') : null;
 
-      // 3. Register candidate record on Spring Boot
       const candidateResponse = await apiClient.post(
         `/job-postings/${id}/candidates`,
         { resumeFileUrl: secureUrl, resumeHash: cleanEtag },
@@ -242,22 +262,117 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
         }
       );
 
-      return candidateResponse.data;
-    },
-    onSuccess: () => {
-      setUploadProgress(null);
+      const candidateData = candidateResponse.data;
+
+      setBatchFiles(prev => prev.map(f => f.id === fileObj.id ? {
+        ...f,
+        status: 'pending',
+        candidateId: candidateData.id
+      } : f));
+
+      setActiveCandidateIds(prev => [...prev, candidateData.id]);
       refetchCandidates();
-      setToastMessage('Resume uploaded and parsing started.');
+
+    } catch (err: any) {
+      const errMsg = err.response?.data?.detail || err.message || 'Upload failed';
+      setBatchFiles(prev => prev.map(f => f.id === fileObj.id ? {
+        ...f,
+        status: 'failed',
+        error: errMsg
+      } : f));
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const filesList = e.target.files;
+    if (!filesList || filesList.length === 0) return;
+
+    const filesArray = Array.from(filesList);
+
+    if (filesArray.length > 20) {
+      setToastMessage('Maximum 20 files allowed at once.');
       setShowToast(true);
       setTimeout(() => setShowToast(false), 4000);
-    },
-    onError: (err: any) => {
-      setUploadProgress(null);
-      setUploadError(err.response?.data?.detail || err.message || 'Upload failed');
-    },
-  });
+      return;
+    }
 
-  // Retry logic (creates a new row per client shortcut requirements)
+    const allowedExtensions = ['pdf', 'docx'];
+    const maxFileSize = 10 * 1024 * 1024; // 10MB
+
+    const newBatchFiles: BatchFile[] = [];
+    const validUploadTasks: (() => Promise<void>)[] = [];
+
+    filesArray.forEach((file, index) => {
+      const fileId = `${file.name}-${Date.now()}-${index}`;
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      
+      let status: BatchFile['status'] = 'pending';
+      let error: string | null = null;
+
+      if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
+        status = 'rejected';
+        error = 'Invalid file format. Only PDF and DOCX files are allowed.';
+      } else if (file.size > maxFileSize) {
+        status = 'rejected';
+        error = 'File size exceeds limit of 10MB.';
+      }
+
+      const batchFileItem: BatchFile = {
+        id: fileId,
+        name: file.name,
+        size: file.size,
+        status,
+        progress: 0,
+        error,
+        candidateId: null
+      };
+
+      newBatchFiles.push(batchFileItem);
+
+      if (status === 'pending') {
+        validUploadTasks.push(async () => {
+          await uploadFile(batchFileItem, file);
+        });
+      }
+    });
+
+    setBatchFiles(prev => [...newBatchFiles, ...prev]);
+    runWithConcurrency(validUploadTasks, 3);
+  };
+
+  useEffect(() => {
+    if (candidates && activeCandidateIds.length > 0) {
+      let updatedActiveIds = [...activeCandidateIds];
+      
+      setBatchFiles((prevFiles) =>
+        prevFiles.map((file) => {
+          if (file.candidateId && activeCandidateIds.includes(file.candidateId)) {
+            const match = candidates.find((c) => c.id === file.candidateId);
+            if (match) {
+              const status = match.resumeStatus;
+              
+              if (status === 'SCORED' || status === 'FAILED') {
+                updatedActiveIds = updatedActiveIds.filter(id => id !== file.candidateId);
+              }
+              
+              return {
+                ...file,
+                status: status.toLowerCase() as any,
+                error: status === 'FAILED' ? (match.parseError || 'Parsing failed') : file.error
+              };
+            }
+          }
+          return file;
+        })
+      );
+
+      const hasChanged = updatedActiveIds.length !== activeCandidateIds.length;
+      if (hasChanged) {
+        setActiveCandidateIds(updatedActiveIds);
+      }
+    }
+  }, [candidates, activeCandidateIds]);
+
   const retryMutation = useMutation({
     mutationFn: async (resumeFileUrl: string) => {
       const response = await apiClient.post(
@@ -283,22 +398,6 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
       setTimeout(() => setShowToast(false), 4000);
     },
   });
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Check extensions
-    const allowedExtensions = ['pdf', 'docx'];
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-
-    if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
-      setUploadError('Invalid file format. Only PDF and DOCX files are allowed.');
-      return;
-    }
-
-    uploadMutation.mutate(file);
-  };
 
   const onSubmit = (formData: JobPostingFormData) => {
     updateMutation.mutate(formData);
@@ -691,8 +790,9 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                       <input
                         type="file"
                         accept=".pdf,.docx"
+                        multiple
                         onChange={handleFileChange}
-                        disabled={uploadMutation.isPending}
+                        disabled={batchFiles.some(f => f.status === 'uploading')}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
                         id="resume-file-input"
                       />
@@ -703,7 +803,7 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                           </svg>
                         </div>
                         <p className="text-xs font-semibold text-brand-text-primary">
-                          {uploadMutation.isPending ? 'Uploading file...' : 'Choose PDF or DOCX file'}
+                          {batchFiles.some(f => f.status === 'uploading') ? 'Uploading files...' : 'Choose PDF or DOCX files'}
                         </p>
                         <p className="text-[10px] text-brand-text-secondary">
                           Maximum file size 10MB
@@ -711,24 +811,45 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                       </div>
                     </div>
 
-                    {uploadProgress !== null && (
-                      <div className="space-y-1.5" data-testid="upload-progress">
-                        <div className="flex justify-between text-[11px] font-semibold">
-                          <span className="text-brand-text-secondary">Uploading to Cloudinary</span>
-                          <span className="text-brand-accent">{uploadProgress}%</span>
-                        </div>
-                        <div className="w-full bg-brand-bg rounded-full h-1.5 overflow-hidden border border-brand-border">
-                          <div
-                            className="bg-brand-accent h-1.5 rounded-full transition-all duration-300"
-                            style={{ width: `${uploadProgress}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
+                    {batchFiles.length > 0 && (
+                      <div className="space-y-3 mt-4 border-t border-brand-border/40 pt-4" data-testid="upload-batch-list">
+                        <h4 className="text-xs font-semibold text-brand-text-primary">
+                          Upload Queue
+                        </h4>
+                        <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                          {batchFiles.map((file) => (
+                            <div key={file.id} className="p-3 bg-brand-bg/40 border border-brand-border rounded-lg space-y-2" data-testid={`batch-file-row-${file.name}`}>
+                              <div className="flex items-center justify-between gap-4 text-xs">
+                                <span className="font-medium text-brand-text-primary truncate max-w-[200px]" title={file.name}>
+                                  {file.name}
+                                </span>
+                                <span className={`font-semibold capitalize text-[10px] px-2 py-0.5 rounded-full ${
+                                  file.status === 'scored' ? 'bg-brand-accent-secondary/15 text-brand-accent-secondary' :
+                                  file.status === 'failed' || file.status === 'rejected' ? 'bg-rose-950/40 text-rose-400' :
+                                  file.status === 'uploading' ? 'bg-blue-950/40 text-blue-400' :
+                                  'bg-neutral-800 text-neutral-400 border border-neutral-700'
+                                }`}>
+                                  {file.status === 'uploading' ? `Uploading ${file.progress}%` : file.status}
+                                </span>
+                              </div>
 
-                    {uploadError && (
-                      <div className="p-3 bg-rose-950/20 border border-rose-500/30 text-rose-400 rounded-lg text-xs" data-testid="upload-error">
-                        {uploadError}
+                              {file.status === 'uploading' && (
+                                <div className="w-full bg-brand-bg rounded-full h-1 overflow-hidden">
+                                  <div
+                                    className="bg-brand-accent h-1 rounded-full transition-all duration-300"
+                                    style={{ width: `${file.progress}%` }}
+                                  />
+                                </div>
+                              )}
+
+                              {file.error && (
+                                <p className="text-[10px] text-rose-400 leading-relaxed" data-testid="batch-file-error">
+                                  {file.error}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>

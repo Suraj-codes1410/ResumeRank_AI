@@ -352,4 +352,216 @@ describe('JobPostingDetailPage Edit & Upload Tests', () => {
     // Since scored is a terminal state, no further candidate listing polls should run
     expect(finalCallCount).toBe(initialCallCount);
   });
+
+  it('selecting 3 valid files shows 3 independent progress rows', async () => {
+    const mockParams = {
+      then: (onFulfill: any) => {
+        onFulfill({ id: 'posting-123' });
+      },
+      status: 'fulfilled',
+      value: { id: 'posting-123' }
+    } as any;
+
+    vi.mocked(apiClient.get).mockImplementation(async (url) => {
+      if (url.includes('/candidates')) {
+        return { data: { items: [] } };
+      }
+      return {
+        data: {
+          id: 'posting-123',
+          title: 'Java Engineer',
+          status: 'ACTIVE',
+        },
+      };
+    });
+
+    vi.mocked(apiClient.post).mockResolvedValue({
+      data: {
+        signature: 'mock-sig',
+        timestamp: 123456,
+        apiKey: 'key',
+        cloudName: 'cloud',
+        folder: 'folder'
+      }
+    });
+
+    vi.mocked(axios.post).mockResolvedValue({
+      data: {
+        secure_url: 'http://cloudinary.com/dummy.pdf',
+        etag: 'mock-etag'
+      }
+    });
+
+    const queryClient = createTestQueryClient();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <JobPostingDetailPage params={mockParams} />
+        </React.Suspense>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('success-state')).toBeInTheDocument();
+    });
+
+    const f1 = new File(['content1'], 'file1.pdf', { type: 'application/pdf' });
+    const f2 = new File(['content2'], 'file2.pdf', { type: 'application/pdf' });
+    const f3 = new File(['content3'], 'file3.pdf', { type: 'application/pdf' });
+
+    const fileInput = document.getElementById('resume-file-input') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [f1, f2, f3] } });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('batch-file-row-file1.pdf')).toBeInTheDocument();
+      expect(screen.getByTestId('batch-file-row-file2.pdf')).toBeInTheDocument();
+      expect(screen.getByTestId('batch-file-row-file3.pdf')).toBeInTheDocument();
+    });
+  });
+
+  it('one invalid file (wrong type) among 3 selected shows an error for just that one while the other 2 proceed', async () => {
+    const mockParams = {
+      then: (onFulfill: any) => {
+        onFulfill({ id: 'posting-123' });
+      },
+      status: 'fulfilled',
+      value: { id: 'posting-123' }
+    } as any;
+
+    vi.mocked(apiClient.get).mockImplementation(async (url) => {
+      if (url.includes('/candidates')) {
+        return { data: { items: [] } };
+      }
+      return { data: { id: 'posting-123', title: 'Java Engineer', status: 'ACTIVE' } };
+    });
+
+    const queryClient = createTestQueryClient();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <JobPostingDetailPage params={mockParams} />
+        </React.Suspense>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('success-state')).toBeInTheDocument();
+    });
+
+    const f1 = new File(['c1'], 'file1.pdf', { type: 'application/pdf' });
+    const fInvalid = new File(['invalid'], 'file2.txt', { type: 'text/plain' });
+    const f3 = new File(['c3'], 'file3.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+
+    const fileInput = document.getElementById('resume-file-input') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [f1, fInvalid, f3] } });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('batch-file-row-file1.pdf')).toBeInTheDocument();
+      expect(screen.getByTestId('batch-file-row-file2.txt')).toBeInTheDocument();
+      expect(screen.getByTestId('batch-file-row-file3.docx')).toBeInTheDocument();
+    });
+
+    const errorText = screen.getByText('Invalid file format. Only PDF and DOCX files are allowed.');
+    expect(errorText).toBeInTheDocument();
+    expect(errorText.closest('[data-testid="batch-file-row-file2.txt"]')).toBeInTheDocument();
+  });
+
+  it('polling correctly tracks multiple candidate IDs simultaneously and stops once ALL of them reach a terminal status, not just the first one', async () => {
+    const mockParams = {
+      then: (onFulfill: any) => {
+        onFulfill({ id: 'posting-123' });
+      },
+      status: 'fulfilled',
+      value: { id: 'posting-123' }
+    } as any;
+
+    let candidatesList: any[] = [];
+    
+    vi.mocked(apiClient.get).mockImplementation(async (url) => {
+      if (url.includes('/candidates')) {
+        return { data: { items: candidatesList } };
+      }
+      return { data: { id: 'posting-123', title: 'Java Engineer', status: 'ACTIVE' } };
+    });
+
+    let registerCount = 0;
+    vi.mocked(apiClient.post).mockImplementation(async (url) => {
+      if (url.includes('/signature')) {
+        return { data: { signature: 'mock', timestamp: 1234, apiKey: 'k', cloudName: 'c', folder: 'f' } };
+      }
+      registerCount++;
+      return { data: { id: `cand-${registerCount}`, resumeStatus: 'PENDING', resumeFileUrl: 'url' } };
+    });
+
+    vi.mocked(axios.post).mockResolvedValue({
+      data: { secure_url: 'http://cloudinary.com/dummy.pdf', etag: 'etag' }
+    });
+
+    const queryClient = createTestQueryClient();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <JobPostingDetailPage params={mockParams} />
+        </React.Suspense>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('success-state')).toBeInTheDocument();
+    });
+
+    const f1 = new File(['c1'], 'file1.pdf', { type: 'application/pdf' });
+    const f2 = new File(['c2'], 'file2.pdf', { type: 'application/pdf' });
+
+    // Set the list to pending candidates before firing the change
+    candidatesList = [
+      { id: 'cand-1', resumeStatus: 'PENDING', name: null, email: null },
+      { id: 'cand-2', resumeStatus: 'PENDING', name: null, email: null }
+    ];
+
+    const fileInput = document.getElementById('resume-file-input') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [f1, f2] } });
+
+    await waitFor(() => {
+      expect(vi.mocked(apiClient.post).mock.calls.filter(c => c[0].includes('/candidates')).length).toBe(2);
+    });
+
+    queryClient.invalidateQueries({ queryKey: ['candidates'] });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Pending').length).toBe(2);
+    });
+
+    // One terminal (scored), one active (parsing)
+    candidatesList = [
+      { id: 'cand-1', resumeStatus: 'SCORED', overallScore: 90, name: 'Alice', email: 'alice@example.com' },
+      { id: 'cand-2', resumeStatus: 'PARSING', name: null, email: null }
+    ];
+
+    queryClient.invalidateQueries({ queryKey: ['candidates'] });
+
+    await waitFor(() => {
+      expect(screen.getByText('Score: 90/100')).toBeInTheDocument();
+      expect(screen.getByText('Parsing...')).toBeInTheDocument();
+    });
+
+    // Both terminal (scored)
+    candidatesList = [
+      { id: 'cand-1', resumeStatus: 'SCORED', overallScore: 90, name: 'Alice', email: 'alice@example.com' },
+      { id: 'cand-2', resumeStatus: 'SCORED', overallScore: 80, name: 'Bob', email: 'bob@example.com' }
+    ];
+
+    queryClient.invalidateQueries({ queryKey: ['candidates'] });
+
+    await waitFor(() => {
+      expect(screen.getByText('Score: 90/100')).toBeInTheDocument();
+      expect(screen.getByText('Score: 80/100')).toBeInTheDocument();
+    });
+
+    const callsCountBeforeDelay = vi.mocked(apiClient.get).mock.calls.length;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const callsCountAfterDelay = vi.mocked(apiClient.get).mock.calls.length;
+
+    expect(callsCountAfterDelay).toBe(callsCountBeforeDelay);
+  });
 });
