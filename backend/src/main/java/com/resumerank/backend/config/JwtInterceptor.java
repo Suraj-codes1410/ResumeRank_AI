@@ -19,12 +19,25 @@ public class JwtInterceptor implements HandlerInterceptor {
         this.jwtServiceProvider = jwtServiceProvider;
     }
 
+    private void writeError(HttpServletResponse response, HttpStatus status, String error, String detail) throws java.io.IOException {
+        response.setStatus(status.value());
+        response.setContentType("application/json; charset=UTF-8");
+        String json = String.format(
+            "{\"error\":\"%s\",\"detail\":\"%s\",\"status\":%d,\"timestamp\":\"%s\"}",
+            error, detail, status.value(), java.time.Instant.now().toString()
+        );
+        response.getWriter().write(json);
+    }
+
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
         String authHeader = request.getHeader("Authorization");
         
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            response.sendError(HttpStatus.UNAUTHORIZED.value(), "Missing or invalid Authorization header");
+            writeError(response, HttpStatus.UNAUTHORIZED, "Unauthorized", "Missing or invalid Authorization header");
             return false;
         }
 
@@ -32,7 +45,7 @@ public class JwtInterceptor implements HandlerInterceptor {
         try {
             JwtService jwtService = jwtServiceProvider.getIfAvailable();
             if (jwtService == null) {
-                response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Security context error: JwtService unavailable");
+                writeError(response, HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "Security context error: JwtService unavailable");
                 return false;
             }
             
@@ -40,7 +53,7 @@ public class JwtInterceptor implements HandlerInterceptor {
             
             String type = decodedJWT.getClaim("type").asString();
             if (!"access".equals(type)) {
-                response.sendError(HttpStatus.UNAUTHORIZED.value(), "Invalid token type");
+                writeError(response, HttpStatus.UNAUTHORIZED, "Unauthorized", "Invalid token type");
                 return false;
             }
 
@@ -51,7 +64,7 @@ public class JwtInterceptor implements HandlerInterceptor {
             request.setAttribute("authenticatedUserEmail", email);
             return true;
         } catch (Exception e) {
-            response.sendError(HttpStatus.UNAUTHORIZED.value(), "Invalid or expired token");
+            writeError(response, HttpStatus.UNAUTHORIZED, "Unauthorized", "Invalid or expired token");
             return false;
         }
     }
