@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, KeyboardEvent, use } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useMemo, KeyboardEvent, use } from 'react';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Fraunces, Inter } from 'next/font/google';
@@ -108,27 +108,91 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
     retry: false,
   });
 
+  const searchParams = useSearchParams();
+
+  const [sort, setSort] = useState(() => searchParams?.get('sort') || 'score_desc');
+  const [minScore, setMinScore] = useState(() => {
+    const val = searchParams?.get('minScore');
+    return val ? parseInt(val, 10) : '';
+  });
+  const [skill, setSkill] = useState(() => searchParams?.get('skill') || '');
+  const [search, setSearch] = useState(() => searchParams?.get('search') || '');
+  const [resumeStatus, setResumeStatus] = useState(() => searchParams?.get('resumeStatus') || '');
+  const [searchInput, setSearchInput] = useState(() => searchParams?.get('search') || '');
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearch(searchInput);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchInput]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (sort && sort !== 'score_desc') params.set('sort', sort);
+    if (minScore) params.set('minScore', minScore.toString());
+    if (skill) params.set('skill', skill);
+    if (search) params.set('search', search);
+    if (resumeStatus) params.set('resumeStatus', resumeStatus);
+
+    const query = params.toString();
+    const newUrl = `${window.location.pathname}${query ? `?${query}` : ''}`;
+    window.history.replaceState(null, '', newUrl);
+  }, [sort, minScore, skill, search, resumeStatus]);
+
+  const handleResetFilters = () => {
+    setSearchInput('');
+    setSearch('');
+    setSort('score_desc');
+    setMinScore('');
+    setSkill('');
+    setResumeStatus('');
+  };
+
   // Fetch candidates list & poll if at least one is pending or parsing
-  const { data: candidates, refetch: refetchCandidates } = useQuery<Candidate[]>({
-    queryKey: ['candidates', id, accessToken],
-    queryFn: async () => {
-      const response = await apiClient.get(`/job-postings/${id}/candidates`, {
+  const {
+    data: candidatesData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch: refetchCandidates
+  } = useInfiniteQuery({
+    queryKey: ['candidates', id, accessToken, sort, minScore, skill, search, resumeStatus],
+    queryFn: async ({ pageParam = '' }) => {
+      const params = new URLSearchParams();
+      if (sort) params.append('sort', sort);
+      if (minScore) params.append('minScore', minScore.toString());
+      if (skill) params.append('skill', skill);
+      if (search) params.append('search', search);
+      if (resumeStatus) params.append('resumeStatus', resumeStatus);
+      if (pageParam) params.append('cursor', pageParam as string);
+      params.append('limit', '25');
+
+      const response = await apiClient.get(`/job-postings/${id}/candidates?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       });
-      return response.data.items;
+      return response.data;
     },
+    initialPageParam: '',
+    getNextPageParam: (lastPage) => lastPage.nextCursor || undefined,
     enabled: !!accessToken && !!id,
     refetchInterval: (query) => {
-      const list = query.state.data as Candidate[] | undefined;
-      if (!list || list.length === 0) return false;
-      const hasActive = list.some(
+      const pages = query.state.data?.pages;
+      if (!pages) return false;
+      const allCandidates = pages.flatMap(p => p.items);
+      const hasActive = allCandidates.some(
         (c) => (c.resumeStatus === 'PENDING' || c.resumeStatus === 'PARSING') || activeCandidateIds.includes(c.id)
       );
       return hasActive ? 3000 : false;
     },
   });
+
+  const candidates = useMemo(() => {
+    return candidatesData ? candidatesData.pages.flatMap((page) => page.items) : [];
+  }, [candidatesData]);
+
 
   const {
     register,
@@ -398,6 +462,79 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
       setTimeout(() => setShowToast(false), 4000);
     },
   });
+  const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
+  const [bulkStatus, setBulkStatus] = useState('NEW');
+
+  const bulkStatusMutation = useMutation({
+    mutationFn: async (payload: { candidateIds: string[]; status: string }) => {
+      const response = await apiClient.post(
+        '/candidates/bulk-status',
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      return response.data;
+    },
+    onSuccess: (data: any) => {
+      setSelectedCandidateIds([]);
+      refetchCandidates();
+      const updatedCount = data.updated?.length || 0;
+      const skippedCount = data.skipped?.length || 0;
+      setToastMessage(`${updatedCount} updated, ${skippedCount} skipped`);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 4000);
+    },
+    onError: () => {
+      setToastMessage('Failed to update candidates status.');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 4000);
+    }
+  });
+
+  const handleBulkStatusApply = () => {
+    if (bulkStatus === 'REJECTED') {
+      const confirmed = window.confirm('Are you sure you want to bulk-reject the selected candidates? This action is destructive.');
+      if (!confirmed) return;
+    }
+    bulkStatusMutation.mutate({
+      candidateIds: selectedCandidateIds,
+      status: bulkStatus
+    });
+  };
+
+  const handleExportCsv = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (sort) params.set('sort', sort);
+      if (minScore) params.set('minScore', minScore.toString());
+      if (skill) params.set('skill', skill);
+      if (search) params.set('search', search);
+      if (resumeStatus) params.set('resumeStatus', resumeStatus);
+
+      const response = await apiClient.get(`/job-postings/${id}/candidates/export?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `candidates-export-${id}-${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setToastMessage('Failed to export candidates CSV.');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 4000);
+    }
+  };
 
   const onSubmit = (formData: JobPostingFormData) => {
     updateMutation.mutate(formData);
@@ -855,69 +992,293 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                   </div>
 
                   {/* Candidates Panel */}
-                  <div className="bg-brand-surface border border-brand-border rounded-xl p-6 shadow-xl shadow-black/20 space-y-4">
-                    <h3 className={`text-xl font-medium tracking-tight text-brand-text-primary ${fraunces.className}`}>
-                      Screened Candidates
-                    </h3>
+                  <div className="bg-brand-surface border border-brand-border rounded-xl p-6 shadow-xl shadow-black/20 space-y-6">
+                    <div className="flex items-center justify-between gap-4">
+                      <h3 className={`text-xl font-medium tracking-tight text-brand-text-primary ${fraunces.className}`}>
+                        Screened Candidates
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={handleExportCsv}
+                        className="inline-flex items-center gap-1.5 border border-brand-accent px-4 py-1.5 rounded-lg text-xs font-semibold text-brand-accent hover:bg-brand-accent/10 transition-colors"
+                        data-testid="export-csv-button"
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Export CSV
+                      </button>
+                    </div>
+
+                    {/* Filter & Sort controls */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-brand-bg/40 p-4 border border-brand-border rounded-xl">
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="filter-search-input" className="text-[10px] font-bold uppercase tracking-wider text-brand-text-secondary">Search Name</label>
+                        <input
+                          id="filter-search-input"
+                          type="text"
+                          placeholder="Search candidates by name..."
+                          value={searchInput}
+                          onChange={(e) => setSearchInput(e.target.value)}
+                          className="w-full bg-brand-bg border border-brand-border rounded-lg px-3 py-2 text-xs transition-all focus:outline-none focus:border-brand-accent text-brand-text-primary"
+                          data-testid="filter-search"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="filter-sort-select" className="text-[10px] font-bold uppercase tracking-wider text-brand-text-secondary">Sort By</label>
+                        <select
+                          id="filter-sort-select"
+                          value={sort}
+                          onChange={(e) => setSort(e.target.value)}
+                          className="w-full bg-brand-bg border border-brand-border rounded-lg px-3 py-2 text-xs transition-all focus:outline-none focus:border-brand-accent text-brand-text-primary"
+                          data-testid="filter-sort"
+                        >
+                          <option value="score_desc">Highest Score</option>
+                          <option value="score_asc">Lowest Score</option>
+                          <option value="newest">Newest</option>
+                          <option value="oldest">Oldest</option>
+                        </select>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-brand-text-secondary">Skills & Min Score</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            placeholder="Filter by skill..."
+                            value={skill}
+                            onChange={(e) => setSkill(e.target.value)}
+                            className="w-full bg-brand-bg border border-brand-border rounded-lg px-3 py-2 text-xs transition-all focus:outline-none focus:border-brand-accent text-brand-text-primary"
+                            data-testid="filter-skill"
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            placeholder="Min score (0-100)"
+                            value={minScore}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setMinScore(val === '' ? '' : Math.min(100, Math.max(0, parseInt(val, 10))));
+                            }}
+                            className="w-28 bg-brand-bg border border-brand-border rounded-lg px-2 py-2 text-xs text-center transition-all focus:outline-none focus:border-brand-accent text-brand-text-primary"
+                            data-testid="filter-min-score"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="filter-status-select" className="text-[10px] font-bold uppercase tracking-wider text-brand-text-secondary">Resume Status</label>
+                        <select
+                          id="filter-status-select"
+                          value={resumeStatus}
+                          onChange={(e) => setResumeStatus(e.target.value)}
+                          className="w-full bg-brand-bg border border-brand-border rounded-lg px-3 py-2 text-xs transition-all focus:outline-none focus:border-brand-accent text-brand-text-primary"
+                          data-testid="filter-resume-status"
+                        >
+                          <option value="">All Resume Statuses</option>
+                          <option value="PENDING">Pending</option>
+                          <option value="PARSING">Parsing</option>
+                          <option value="SCORED">Scored</option>
+                          <option value="FAILED">Failed</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Bulk Action Bar */}
+                    {selectedCandidateIds.length > 0 && (
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-brand-accent/5 border border-brand-accent/30 p-4 rounded-xl" data-testid="bulk-action-bar">
+                        <div className="text-xs font-semibold text-brand-text-primary">
+                          {selectedCandidateIds.length} candidate{selectedCandidateIds.length === 1 ? '' : 's'} selected
+                        </div>
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                          <select
+                            id="bulk-status-select"
+                            value={bulkStatus}
+                            onChange={(e) => setBulkStatus(e.target.value)}
+                            className="bg-brand-bg border border-brand-border rounded-lg px-3 py-2 text-xs transition-all focus:outline-none focus:border-brand-accent text-brand-text-primary"
+                            data-testid="bulk-status-select"
+                          >
+                            <option value="NEW">New</option>
+                            <option value="REVIEWING">Reviewing</option>
+                            <option value="SHORTLISTED">Shortlisted</option>
+                            <option value="REJECTED">Rejected</option>
+                          </select>
+                          <button
+                            type="button"
+                            onClick={handleBulkStatusApply}
+                            disabled={bulkStatusMutation.isPending}
+                            className="bg-brand-accent border border-brand-accent text-brand-bg px-4 py-2 rounded-lg text-xs font-bold hover:bg-brand-accent/80 transition-all disabled:opacity-50"
+                            data-testid="bulk-apply-button"
+                          >
+                            {bulkStatusMutation.isPending ? 'Applying...' : 'Apply'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     {candidates && candidates.length > 0 ? (
-                      <div className="divide-y divide-brand-border/40 space-y-4" data-testid="candidates-list">
-                        {candidates.map((candidate: Candidate, index: number) => {
-                          const fileName = candidate.resumeFileUrl
-                            ? decodeURIComponent(candidate.resumeFileUrl.split('/').pop() || 'Resume')
-                            : 'Resume';
-                          return (
-                            <div key={candidate.id} className="pt-4 first:pt-0 space-y-3" data-testid={`candidate-row-${index}`}>
-                              <div className="flex items-start justify-between gap-4">
-                                <div className="space-y-1 min-w-0">
-                                  <a
-                                    href={candidate.resumeFileUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-sm font-semibold text-brand-accent hover:underline block truncate"
-                                  >
-                                    {fileName}
-                                  </a>
-                                  <p className="text-xs text-brand-text-primary font-medium">
-                                    {candidate.name || 'Name: Extraction pending'}
-                                  </p>
-                                  <p className="text-xs text-brand-text-secondary truncate">
-                                    {candidate.email || 'Email: Extraction pending'}
-                                  </p>
+                      <div className="space-y-4">
+                        {/* Select All checkbox header */}
+                        <div className="flex items-center justify-between bg-neutral-800/10 p-2.5 rounded-lg border border-brand-border/40 text-xs">
+                          <label className="flex items-center gap-2 cursor-pointer text-brand-text-secondary">
+                            <input
+                              type="checkbox"
+                              checked={candidates.length > 0 && candidates.every(c => selectedCandidateIds.includes(c.id))}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  const currentIds = candidates.map(c => c.id);
+                                  setSelectedCandidateIds(prev => Array.from(new Set([...prev, ...currentIds])));
+                                } else {
+                                  const currentIds = candidates.map(c => c.id);
+                                  setSelectedCandidateIds(prev => prev.filter(id => !currentIds.includes(id)));
+                                }
+                              }}
+                              className="rounded border-neutral-700 bg-neutral-900 text-brand-accent focus:ring-brand-accent/30 h-4 w-4"
+                              data-testid="select-all-checkbox"
+                            />
+                            <span>Select all on currently loaded page</span>
+                          </label>
+                          <span className="text-[10px] text-brand-text-secondary italic">
+                            * Note: Cursor pagination is active. This selects loaded candidates only.
+                          </span>
+                        </div>
+
+                        <div className="divide-y divide-brand-border/40 space-y-4" data-testid="candidates-list">
+                          {candidates.map((candidate: Candidate, index: number) => {
+                            const fileName = candidate.resumeFileUrl
+                              ? decodeURIComponent(candidate.resumeFileUrl.split('/').pop() || 'Resume')
+                              : 'Resume';
+                            
+                            let scoreColorClass = 'text-neutral-400 border-neutral-700 bg-neutral-800/40';
+                            if (candidate.overallScore !== null && candidate.overallScore !== undefined) {
+                              if (candidate.overallScore >= 70) {
+                                scoreColorClass = 'text-emerald-400 border-emerald-500/30 bg-emerald-950/20';
+                              } else if (candidate.overallScore >= 40) {
+                                scoreColorClass = 'text-amber-400 border-amber-500/30 bg-amber-950/20';
+                              } else {
+                                scoreColorClass = 'text-rose-400 border-rose-500/30 bg-rose-950/20';
+                              }
+                            }
+
+                            return (
+                              <div
+                                key={candidate.id}
+                                onClick={() => router.push(`/candidates/${candidate.id}`)}
+                                className="pt-4 first:pt-0 space-y-3 cursor-pointer hover:bg-neutral-800/10 p-2 rounded-lg transition-colors flex items-start gap-3"
+                                data-testid={`candidate-row-${index}`}
+                              >
+                                {/* Row Checkbox */}
+                                <div className="pt-1" onClick={(e) => e.stopPropagation()}>
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedCandidateIds.includes(candidate.id)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedCandidateIds(prev => [...prev, candidate.id]);
+                                      } else {
+                                        setSelectedCandidateIds(prev => prev.filter(id => id !== candidate.id));
+                                      }
+                                    }}
+                                    className="rounded border-neutral-700 bg-neutral-900 text-brand-accent focus:ring-brand-accent/30 h-4 w-4"
+                                    data-testid={`row-checkbox-${index}`}
+                                  />
                                 </div>
-                                <div className="flex-shrink-0">
-                                  {renderStatusBadge(candidate)}
+
+                                <div className="flex-1 min-w-0 space-y-3">
+                                  <div className="flex items-start justify-between gap-4">
+                                    <div className="space-y-1 min-w-0">
+                                      <a
+                                        href={candidate.resumeFileUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="text-sm font-semibold text-brand-accent hover:underline block truncate"
+                                      >
+                                        {fileName}
+                                      </a>
+                                      <p className="text-xs text-brand-text-primary font-medium">
+                                        {candidate.name || 'Name: Extraction pending'}
+                                      </p>
+                                      <p className="text-xs text-brand-text-secondary truncate">
+                                        {candidate.email || 'Email: Extraction pending'}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                      {candidate.overallScore !== null && candidate.overallScore !== undefined ? (
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${scoreColorClass}`}>
+                                          Score: {candidate.overallScore}/100
+                                        </span>
+                                      ) : (
+                                        renderStatusBadge(candidate)
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {candidate.resumeStatus === 'FAILED' && (
+                                    <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+                                      <p className="text-xs text-rose-400 leading-relaxed bg-rose-950/15 border border-rose-500/20 rounded p-2" data-testid="parse-error">
+                                        Error: {candidate.parseError || 'Unknown parsing failure'}
+                                      </p>
+                                      <div className="flex items-center gap-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => retryMutation.mutate(candidate.resumeFileUrl)}
+                                          disabled={retryMutation.isPending}
+                                          className="inline-flex justify-center items-center border border-brand-accent/50 px-3 py-1.5 text-xs font-semibold rounded-lg text-brand-accent hover:bg-brand-accent/15 transition-all disabled:opacity-50"
+                                          data-testid="retry-button"
+                                        >
+                                          {retryMutation.isPending ? 'Retrying...' : 'Retry'}
+                                        </button>
+                                        <span className="text-[10px] text-brand-text-secondary italic">
+                                          * Creates new screening record
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
-
-                              {candidate.resumeStatus === 'FAILED' && (
-                                <div className="space-y-2">
-                                  <p className="text-xs text-rose-400 leading-relaxed bg-rose-950/15 border border-rose-500/20 rounded p-2" data-testid="parse-error">
-                                    Error: {candidate.parseError || 'Unknown parsing failure'}
-                                  </p>
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => retryMutation.mutate(candidate.resumeFileUrl)}
-                                      disabled={retryMutation.isPending}
-                                      className="inline-flex justify-center items-center border border-brand-accent/50 px-3 py-1.5 text-xs font-semibold rounded-lg text-brand-accent hover:bg-brand-accent/15 transition-all disabled:opacity-50"
-                                      data-testid="retry-button"
-                                    >
-                                      {retryMutation.isPending ? 'Retrying...' : 'Retry'}
-                                    </button>
-                                    <span className="text-[10px] text-brand-text-secondary italic">
-                                      * Creates new screening record
-                                    </span>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
+                        {hasNextPage && (
+                          <div className="pt-4 flex justify-center border-t border-brand-border/40">
+                            <button
+                              type="button"
+                              onClick={() => fetchNextPage()}
+                              disabled={isFetchingNextPage}
+                              className="border border-brand-accent bg-transparent text-brand-accent px-5 py-2 rounded-lg text-xs font-semibold hover:bg-brand-accent/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                              data-testid="load-more-button"
+                            >
+                              {isFetchingNextPage ? 'Loading more...' : 'Load More Candidates'}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ) : (
-                      <div className="text-center py-8 text-brand-text-secondary text-xs" data-testid="no-candidates">
-                        No resumes uploaded yet for this job posting.
+                      <div className="text-center py-10 px-4 bg-brand-bg/20 border border-brand-border rounded-xl space-y-4">
+                        {!!minScore || !!skill || !!search || !!resumeStatus ? (
+                          <div className="space-y-3" data-testid="empty-filtered-state">
+                            <p className="text-sm text-brand-text-secondary">
+                              No candidates match your current filters.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={handleResetFilters}
+                              className="border border-brand-accent text-brand-accent px-4 py-2 rounded-lg text-xs font-semibold hover:bg-brand-accent/10 transition-all"
+                              data-testid="reset-filters-button"
+                            >
+                              Reset Filters
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-2" data-testid="no-candidates">
+                            <p className="text-xs text-brand-text-secondary">
+                              No resumes uploaded yet for this job posting.
+                            </p>
+                            <p className="text-[10px] text-brand-text-secondary italic">
+                              Drag and drop files in the panel above to get started.
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
