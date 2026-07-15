@@ -1,17 +1,21 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import JobPostingDetailPage from './page';
 import { apiClient } from '@/lib/api-client';
 import axios from 'axios';
 
-// Mock useRouter
+// Mock useRouter & useSearchParams
 const mockPush = vi.fn();
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
   }),
+  useSearchParams: () => {
+    const search = typeof window !== 'undefined' ? window.location.search : '';
+    return new URLSearchParams(search);
+  },
 }));
 
 // Mock Auth Context
@@ -65,6 +69,9 @@ const createTestQueryClient = () =>
 describe('JobPostingDetailPage Edit & Upload Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', '/job-postings/posting-123');
+    }
   });
 
   it('a 404 API response renders the not-found state', async () => {
@@ -529,7 +536,8 @@ describe('JobPostingDetailPage Edit & Upload Tests', () => {
     queryClient.invalidateQueries({ queryKey: ['candidates'] });
 
     await waitFor(() => {
-      expect(screen.getAllByText('Pending').length).toBe(2);
+      const list = screen.getByTestId('candidates-list');
+      expect(within(list).getAllByText('Pending').length).toBe(2);
     });
 
     // One terminal (scored), one active (parsing)
@@ -563,5 +571,287 @@ describe('JobPostingDetailPage Edit & Upload Tests', () => {
     const callsCountAfterDelay = vi.mocked(apiClient.get).mock.calls.length;
 
     expect(callsCountAfterDelay).toBe(callsCountBeforeDelay);
+  });
+
+  it('applying a minScore filter updates the URL query string', async () => {
+    const mockParams = {
+      then: (onFulfill: any) => {
+        onFulfill({ id: 'posting-123' });
+      },
+      status: 'fulfilled',
+      value: { id: 'posting-123' }
+    } as any;
+
+    vi.mocked(apiClient.get).mockImplementation(async (url) => {
+      if (url.includes('/candidates')) {
+        return { data: { items: [], nextCursor: null } };
+      }
+      return { data: { id: 'posting-123', title: 'Java Engineer', status: 'ACTIVE' } };
+    });
+
+    const replaceStateSpy = vi.spyOn(window.history, 'replaceState');
+
+    const queryClient = createTestQueryClient();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <JobPostingDetailPage params={mockParams} />
+        </React.Suspense>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('success-state')).toBeInTheDocument();
+    });
+
+    const minScoreInput = screen.getByTestId('filter-min-score') as HTMLInputElement;
+    fireEvent.change(minScoreInput, { target: { value: '75' } });
+
+    await waitFor(() => {
+      expect(replaceStateSpy).toHaveBeenCalledWith(null, '', expect.stringContaining('minScore=75'));
+    });
+  });
+
+  it('renders correct empty states for zero candidates total vs zero candidates matching filters', async () => {
+    const mockParams = {
+      then: (onFulfill: any) => {
+        onFulfill({ id: 'posting-123' });
+      },
+      status: 'fulfilled',
+      value: { id: 'posting-123' }
+    } as any;
+
+    vi.mocked(apiClient.get).mockImplementation(async (url) => {
+      if (url.includes('/candidates')) {
+        return { data: { items: [], nextCursor: null } };
+      }
+      return { data: { id: 'posting-123', title: 'Java Engineer', status: 'ACTIVE' } };
+    });
+
+    const queryClient = createTestQueryClient();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <JobPostingDetailPage params={mockParams} />
+        </React.Suspense>
+      </QueryClientProvider>
+    );
+
+    // Wait for success-state to load
+    await waitFor(() => {
+      expect(screen.getByTestId('success-state')).toBeInTheDocument();
+    });
+
+    // 1. Initially (no filters set, zero candidates total), it should render no-candidates empty state
+    await waitFor(() => {
+      expect(screen.getByTestId('no-candidates')).toBeInTheDocument();
+      expect(screen.getByText('No resumes uploaded yet for this job posting.')).toBeInTheDocument();
+      expect(screen.queryByTestId('empty-filtered-state')).not.toBeInTheDocument();
+    });
+
+    // 2. Set minScore filter -> should render empty-filtered-state
+    const minScoreInput = screen.getByTestId('filter-min-score') as HTMLInputElement;
+    fireEvent.change(minScoreInput, { target: { value: '60' } });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('empty-filtered-state')).toBeInTheDocument();
+      expect(screen.getByText('No candidates match your current filters.')).toBeInTheDocument();
+      expect(screen.queryByTestId('no-candidates')).not.toBeInTheDocument();
+    });
+
+    // 3. Click Reset Filters -> should go back to no-candidates
+    const resetBtn = screen.getByTestId('reset-filters-button');
+    fireEvent.click(resetBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('no-candidates')).toBeInTheDocument();
+      expect(minScoreInput.value).toBe('');
+    });
+  });
+
+  it('selecting 2 candidates and choosing SHORTLISTED calls the bulk endpoint immediately without confirm', async () => {
+    const mockParams = {
+      then: (onFulfill: any) => {
+        onFulfill({ id: 'posting-123' });
+      },
+      status: 'fulfilled',
+      value: { id: 'posting-123' }
+    } as any;
+
+    const mockCandidates = [
+      { id: 'cand-11', resumeStatus: 'SCORED', overallScore: 80, name: 'Alice', email: 'alice@example.com' },
+      { id: 'cand-22', resumeStatus: 'SCORED', overallScore: 75, name: 'Bob', email: 'bob@example.com' }
+    ];
+
+    vi.mocked(apiClient.get).mockImplementation(async (url) => {
+      if (url.includes('/candidates')) {
+        return { data: { items: mockCandidates, nextCursor: null } };
+      }
+      return { data: { id: 'posting-123', title: 'Java Engineer', status: 'ACTIVE' } };
+    });
+
+    vi.mocked(apiClient.post).mockResolvedValueOnce({ data: { updated: ['cand-11', 'cand-22'], skipped: [] } });
+    const confirmSpy = vi.spyOn(window, 'confirm');
+
+    const queryClient = createTestQueryClient();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <JobPostingDetailPage params={mockParams} />
+        </React.Suspense>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('success-state')).toBeInTheDocument();
+    });
+
+    // Select both candidates
+    const cb1 = screen.getByTestId('row-checkbox-0');
+    const cb2 = screen.getByTestId('row-checkbox-1');
+    fireEvent.click(cb1);
+    fireEvent.click(cb2);
+
+    // Verify bulk action bar is shown
+    expect(screen.getByTestId('bulk-action-bar')).toBeInTheDocument();
+
+    // Select status SHORTLISTED
+    const bulkSelect = screen.getByTestId('bulk-status-select') as HTMLSelectElement;
+    fireEvent.change(bulkSelect, { target: { value: 'SHORTLISTED' } });
+
+    // Click Apply
+    const applyBtn = screen.getByTestId('bulk-apply-button');
+    fireEvent.click(applyBtn);
+
+    // Assert bulk endpoint is called immediately
+    await waitFor(() => {
+      expect(apiClient.post).toHaveBeenCalledWith(
+        '/candidates/bulk-status',
+        { candidateIds: ['cand-11', 'cand-22'], status: 'SHORTLISTED' },
+        expect.anything()
+      );
+      expect(confirmSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  it('selecting candidates and choosing REJECTED shows a confirm dialog before calling the endpoint', async () => {
+    const mockParams = {
+      then: (onFulfill: any) => {
+        onFulfill({ id: 'posting-123' });
+      },
+      status: 'fulfilled',
+      value: { id: 'posting-123' }
+    } as any;
+
+    const mockCandidates = [
+      { id: 'cand-11', resumeStatus: 'SCORED', overallScore: 80, name: 'Alice', email: 'alice@example.com' }
+    ];
+
+    vi.mocked(apiClient.get).mockImplementation(async (url) => {
+      if (url.includes('/candidates')) {
+        return { data: { items: mockCandidates, nextCursor: null } };
+      }
+      return { data: { id: 'posting-123', title: 'Java Engineer', status: 'ACTIVE' } };
+    });
+
+    vi.mocked(apiClient.post).mockResolvedValueOnce({ data: { updated: ['cand-11'], skipped: [] } });
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    const queryClient = createTestQueryClient();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <JobPostingDetailPage params={mockParams} />
+        </React.Suspense>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('success-state')).toBeInTheDocument();
+    });
+
+    const cb1 = screen.getByTestId('row-checkbox-0');
+    fireEvent.click(cb1);
+
+    // Select status REJECTED
+    const bulkSelect = screen.getByTestId('bulk-status-select') as HTMLSelectElement;
+    fireEvent.change(bulkSelect, { target: { value: 'REJECTED' } });
+
+    // Click Apply
+    const applyBtn = screen.getByTestId('bulk-apply-button');
+    fireEvent.click(applyBtn);
+
+    // Assert confirm dialog was shown, and bulk status called after confirmation
+    await waitFor(() => {
+      expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('bulk-reject'));
+      expect(apiClient.post).toHaveBeenCalledWith(
+        '/candidates/bulk-status',
+        { candidateIds: ['cand-11'], status: 'REJECTED' },
+        expect.anything()
+      );
+    });
+  });
+
+  it('the export button includes the currently active filter query params in its request URL', async () => {
+    const mockParams = {
+      then: (onFulfill: any) => {
+        onFulfill({ id: 'posting-123' });
+      },
+      status: 'fulfilled',
+      value: { id: 'posting-123' }
+    } as any;
+
+    const mockCandidates = [
+      { id: 'cand-11', resumeStatus: 'SCORED', overallScore: 80, name: 'Alice', email: 'alice@example.com' }
+    ];
+
+    vi.mocked(apiClient.get).mockImplementation(async (url) => {
+      if (url.includes('/candidates/export')) {
+        return { data: new Blob(['csv content'], { type: 'text/csv' }) };
+      }
+      if (url.includes('/candidates')) {
+        return { data: { items: mockCandidates, nextCursor: null } };
+      }
+      return { data: { id: 'posting-123', title: 'Java Engineer', status: 'ACTIVE' } };
+    });
+
+    const replaceStateSpy = vi.spyOn(window.history, 'replaceState');
+    const queryClient = createTestQueryClient();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <JobPostingDetailPage params={mockParams} />
+        </React.Suspense>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('success-state')).toBeInTheDocument();
+    });
+
+    // Apply some filters
+    const searchInput = screen.getByTestId('filter-search') as HTMLInputElement;
+    const minScoreInput = screen.getByTestId('filter-min-score') as HTMLInputElement;
+    
+    fireEvent.change(searchInput, { target: { value: 'Alice' } });
+    fireEvent.change(minScoreInput, { target: { value: '80' } });
+
+    // Wait for the debounced search to update the URL
+    await waitFor(() => {
+      expect(replaceStateSpy).toHaveBeenCalledWith(null, '', expect.stringContaining('search=Alice'));
+    });
+
+    // Click Export CSV
+    const exportBtn = screen.getByTestId('export-csv-button');
+    fireEvent.click(exportBtn);
+
+    // Verify apiClient.get export endpoint is called with search=Alice and minScore=80
+    await waitFor(() => {
+      const exportCalls = vi.mocked(apiClient.get).mock.calls.filter(c => c[0].includes('/candidates/export'));
+      expect(exportCalls.length).toBeGreaterThan(0);
+      const requestUrl = exportCalls[0][0];
+      expect(requestUrl).toContain('search=Alice');
+      expect(requestUrl).toContain('minScore=80');
+    });
   });
 });
