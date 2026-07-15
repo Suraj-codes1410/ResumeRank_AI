@@ -7,6 +7,8 @@ import com.resumerank.backend.dto.CandidateListResponse;
 import com.resumerank.backend.dto.KeysetCursor;
 import com.resumerank.backend.dto.CandidateStatusUpdateRequest;
 import com.resumerank.backend.dto.CandidateStatusLogResponse;
+import com.resumerank.backend.dto.BulkStatusUpdateRequest;
+import com.resumerank.backend.dto.BulkStatusUpdateResponse;
 import com.resumerank.backend.entity.Candidate;
 import com.resumerank.backend.entity.CandidateScore;
 import com.resumerank.backend.entity.JobPosting;
@@ -337,20 +339,14 @@ public class CandidateService {
         return mapToResponse(candidate);
     }
 
-    @Transactional
-    public CandidateResponse updateCandidateStatus(UUID userId, UUID candidateId, CandidateStatusUpdateRequest request) {
-        Candidate candidate = candidateRepository.findByIdWithJobPostingAndScore(candidateId)
-                .orElseThrow(() -> new ResourceNotFoundException("Candidate not found"));
-
-        if (!candidate.getJobPosting().getUser().getId().equals(userId)) {
-            throw new ResourceNotFoundException("Candidate not found");
+    private boolean updateSingleCandidateStatusHelper(UUID userId, UUID candidateId, PipelineStatus newStatus) {
+        Candidate candidate = candidateRepository.findByIdWithJobPostingAndScore(candidateId).orElse(null);
+        if (candidate == null) {
+            return false;
         }
 
-        PipelineStatus newStatus;
-        try {
-            newStatus = PipelineStatus.valueOf(request.getStatus().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid status: " + request.getStatus());
+        if (!candidate.getJobPosting().getUser().getId().equals(userId)) {
+            return false;
         }
 
         PipelineStatus oldStatus = candidate.getPipelineStatus();
@@ -359,8 +355,10 @@ public class CandidateService {
             candidate.setPipelineStatus(newStatus);
             candidateRepository.saveAndFlush(candidate);
 
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+            User user = userRepository.findById(userId).orElse(null);
+            if (user == null) {
+                return false;
+            }
 
             CandidateStatusLog log = new CandidateStatusLog();
             log.setCandidate(candidate);
@@ -370,7 +368,61 @@ public class CandidateService {
             candidateStatusLogRepository.saveAndFlush(log);
         }
 
+        return true;
+    }
+
+    @Transactional
+    public CandidateResponse updateCandidateStatus(UUID userId, UUID candidateId, CandidateStatusUpdateRequest request) {
+        PipelineStatus newStatus;
+        try {
+            newStatus = PipelineStatus.valueOf(request.getStatus().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid status: " + request.getStatus());
+        }
+
+        boolean success = updateSingleCandidateStatusHelper(userId, candidateId, newStatus);
+        if (!success) {
+            throw new ResourceNotFoundException("Candidate not found");
+        }
+
+        Candidate candidate = candidateRepository.findByIdWithJobPostingAndScore(candidateId).orElseThrow();
         return mapToResponse(candidate);
+    }
+
+    @Transactional
+    public BulkStatusUpdateResponse updateBulkCandidateStatus(UUID userId, BulkStatusUpdateRequest request) {
+        if (request.getCandidateIds() == null) {
+            throw new IllegalArgumentException("Candidate IDs cannot be null");
+        }
+        if (request.getCandidateIds().size() > 200) {
+            throw new IllegalArgumentException("Batch size exceeds limit of 200");
+        }
+
+        PipelineStatus newStatus;
+        try {
+            newStatus = PipelineStatus.valueOf(request.getStatus().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid status: " + request.getStatus());
+        }
+
+        java.util.List<String> updated = new java.util.ArrayList<>();
+        java.util.List<String> skipped = new java.util.ArrayList<>();
+
+        for (String idStr : request.getCandidateIds()) {
+            try {
+                UUID candidateId = UUID.fromString(idStr);
+                boolean success = updateSingleCandidateStatusHelper(userId, candidateId, newStatus);
+                if (success) {
+                    updated.add(idStr);
+                } else {
+                    skipped.add(idStr);
+                }
+            } catch (Exception e) {
+                skipped.add(idStr);
+            }
+        }
+
+        return new BulkStatusUpdateResponse(updated, skipped);
     }
 
     @Transactional(readOnly = true)
@@ -593,5 +645,157 @@ public class CandidateService {
         if (score.getMissingSkills() == null) return false;
         if (score.getSummary() == null || score.getSummary().trim().isEmpty()) return false;
         return true;
+    }
+
+    public void verifyJobPostingOwnership(UUID userId, UUID jobPostingId) {
+        JobPosting jobPosting = jobPostingRepository.findById(jobPostingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Job posting not found"));
+
+        if (!jobPosting.getUser().getId().equals(userId)) {
+            throw new ResourceNotFoundException("Job posting not found");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public void exportCandidatesCsv(
+            UUID userId,
+            UUID jobPostingId,
+            String sort,
+            Integer minScore,
+            String skill,
+            String search,
+            String resumeStatus,
+            java.io.Writer writer) throws java.io.IOException {
+        
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT c.name, c.email, ")
+           .append("cs.overall_score, cs.skills_score, cs.experience_score, cs.seniority_score, cs.matched_skills, cs.missing_skills, ")
+           .append("c.pipeline_status, c.created_at ")
+           .append("FROM candidates c ")
+           .append("LEFT JOIN candidate_scores cs ON c.id = cs.candidate_id ")
+           .append("WHERE c.job_posting_id = :jobPostingId AND c.deleted_at IS NULL ");
+
+        java.util.Map<String, Object> params = new java.util.HashMap<>();
+        params.put("jobPostingId", jobPostingId);
+
+        if (minScore != null) {
+            sql.append("AND cs.overall_score >= :minScore ");
+            params.put("minScore", minScore);
+        }
+
+        if (skill != null && !skill.isBlank()) {
+            sql.append("AND EXISTS (SELECT 1 FROM unnest(cs.matched_skills) s WHERE LOWER(s) = LOWER(:skill)) ");
+            params.put("skill", skill);
+        }
+
+        if (search != null && !search.isBlank()) {
+            sql.append("AND LOWER(c.name) LIKE LOWER(:search) ");
+            params.put("search", "%" + search + "%");
+        }
+
+        if (resumeStatus != null && !resumeStatus.isBlank()) {
+            sql.append("AND c.resume_status = :resumeStatus ");
+            params.put("resumeStatus", resumeStatus);
+        }
+
+        String sortType = (sort == null || sort.isBlank()) ? "score_desc" : sort;
+        if ("score_desc".equals(sortType)) {
+            sql.append("ORDER BY cs.overall_score DESC NULLS LAST, c.id DESC ");
+        } else if ("score_asc".equals(sortType)) {
+            sql.append("ORDER BY cs.overall_score ASC NULLS LAST, c.id ASC ");
+        } else if ("newest".equals(sortType)) {
+            sql.append("ORDER BY c.created_at DESC, c.id DESC ");
+        } else if ("oldest".equals(sortType)) {
+            sql.append("ORDER BY c.created_at ASC, c.id ASC ");
+        }
+
+        jakarta.persistence.Query query = entityManager.createNativeQuery(sql.toString());
+        for (java.util.Map.Entry<String, Object> entry : params.entrySet()) {
+            query.setParameter(entry.getKey(), entry.getValue());
+        }
+
+        java.util.List<Object[]> resultList = query.getResultList();
+
+        org.apache.commons.csv.CSVFormat format = org.apache.commons.csv.CSVFormat.DEFAULT.builder()
+                .setHeader("Name", "Email", "Overall Score", "Skills Score", "Experience Score", "Seniority Score", "Matched Skills", "Missing Skills", "Pipeline Status", "Uploaded At")
+                .build();
+
+        try (org.apache.commons.csv.CSVPrinter printer = new org.apache.commons.csv.CSVPrinter(writer, format)) {
+            for (Object[] row : resultList) {
+                String name = (String) row[0];
+                String email = (String) row[1];
+                Integer overallScore = (Integer) row[2];
+                Integer skillsScore = (Integer) row[3];
+                Integer experienceScore = (Integer) row[4];
+                Integer seniorityScore = (Integer) row[5];
+
+                String matchedSkillsStr = "";
+                String missingSkillsStr = "";
+                try {
+                    Object matchedVal = row[6];
+                    if (matchedVal != null) {
+                        if (matchedVal instanceof java.sql.Array arr) {
+                            matchedSkillsStr = String.join(";", (String[]) arr.getArray());
+                        } else if (matchedVal instanceof String[] arr) {
+                            matchedSkillsStr = String.join(";", arr);
+                        } else if (matchedVal instanceof Object[] arr) {
+                            java.util.List<String> list = new java.util.ArrayList<>();
+                            for (Object o : arr) {
+                                if (o != null) list.add(o.toString());
+                            }
+                            matchedSkillsStr = String.join(";", list);
+                        } else {
+                            matchedSkillsStr = matchedVal.toString();
+                        }
+                    }
+                    Object missingVal = row[7];
+                    if (missingVal != null) {
+                        if (missingVal instanceof java.sql.Array arr) {
+                            missingSkillsStr = String.join(";", (String[]) arr.getArray());
+                        } else if (missingVal instanceof String[] arr) {
+                            missingSkillsStr = String.join(";", arr);
+                        } else if (missingVal instanceof Object[] arr) {
+                            java.util.List<String> list = new java.util.ArrayList<>();
+                            for (Object o : arr) {
+                                if (o != null) list.add(o.toString());
+                            }
+                            missingSkillsStr = String.join(";", list);
+                        } else {
+                            missingSkillsStr = missingVal.toString();
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println("Failed to convert array: " + e.getMessage());
+                    e.printStackTrace();
+                }
+
+                String pipelineStatus = (String) row[8];
+                
+                Object createdVal = row[9];
+                String uploadedAtStr = "";
+                if (createdVal instanceof java.sql.Timestamp ts) {
+                    uploadedAtStr = ts.toInstant().atOffset(java.time.ZoneOffset.UTC).toString();
+                } else if (createdVal instanceof java.time.Instant instant) {
+                    uploadedAtStr = instant.atOffset(java.time.ZoneOffset.UTC).toString();
+                } else if (createdVal instanceof java.time.OffsetDateTime odt) {
+                    uploadedAtStr = odt.atZoneSameInstant(java.time.ZoneOffset.UTC).toOffsetDateTime().toString();
+                } else if (createdVal != null) {
+                    uploadedAtStr = createdVal.toString();
+                }
+
+                printer.printRecord(
+                        name,
+                        email,
+                        overallScore != null ? overallScore.toString() : "",
+                        skillsScore != null ? skillsScore.toString() : "",
+                        experienceScore != null ? experienceScore.toString() : "",
+                        seniorityScore != null ? seniorityScore.toString() : "",
+                        matchedSkillsStr,
+                        missingSkillsStr,
+                        pipelineStatus,
+                        uploadedAtStr
+                );
+            }
+        }
     }
 }

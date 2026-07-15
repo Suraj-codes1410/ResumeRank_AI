@@ -47,4 +47,14 @@ public class CandidateDetailController {
                 candidateService.getCandidateStatusLog(authenticatedUserId, candidateId);
         return ResponseEntity.ok(response);
     }
+
+    @org.springframework.web.bind.annotation.PostMapping("/bulk-status")
+    public ResponseEntity<com.resumerank.backend.dto.BulkStatusUpdateResponse> updateBulkCandidateStatus(
+            @jakarta.validation.Valid @org.springframework.web.bind.annotation.RequestBody com.resumerank.backend.dto.BulkStatusUpdateRequest request,
+            HttpServletRequest servletRequest) {
+        UUID authenticatedUserId = (UUID) servletRequest.getAttribute("authenticatedUserId");
+        com.resumerank.backend.dto.BulkStatusUpdateResponse response =
+                candidateService.updateBulkCandidateStatus(authenticatedUserId, request);
+        return ResponseEntity.ok(response);
+    }
 }

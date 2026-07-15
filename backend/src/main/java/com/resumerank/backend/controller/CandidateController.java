@@ -52,4 +52,35 @@ public class CandidateController {
         );
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/export")
+    public ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> exportCandidates(
+            @PathVariable("jobPostingId") UUID jobPostingId,
+            @org.springframework.web.bind.annotation.RequestParam(value = "sort", defaultValue = "score_desc") String sort,
+            @org.springframework.web.bind.annotation.RequestParam(value = "minScore", required = false) Integer minScore,
+            @org.springframework.web.bind.annotation.RequestParam(value = "skill", required = false) String skill,
+            @org.springframework.web.bind.annotation.RequestParam(value = "search", required = false) String search,
+            @org.springframework.web.bind.annotation.RequestParam(value = "resumeStatus", required = false) String resumeStatus,
+            HttpServletRequest servletRequest) {
+        
+        UUID authenticatedUserId = (UUID) servletRequest.getAttribute("authenticatedUserId");
+
+        candidateService.verifyJobPostingOwnership(authenticatedUserId, jobPostingId);
+
+        String dateStr = java.time.LocalDate.now().toString();
+        String filename = String.format("candidates-%s-%s.csv", jobPostingId, dateStr);
+
+        org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody responseBody = outputStream -> {
+            try (java.io.Writer writer = new java.io.BufferedWriter(new java.io.OutputStreamWriter(outputStream, java.nio.charset.StandardCharsets.UTF_8))) {
+                candidateService.exportCandidatesCsv(
+                        authenticatedUserId, jobPostingId, sort, minScore, skill, search, resumeStatus, writer
+                );
+            }
+        };
+
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, "text/csv; charset=UTF-8")
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .body(responseBody);
+    }
 }
