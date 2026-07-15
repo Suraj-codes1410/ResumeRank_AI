@@ -454,4 +454,193 @@ class CandidateListIntegrationTest {
                 .andExpect(jsonPath("$[1].toStatus").value("reviewing"))
                 .andExpect(jsonPath("$[1].changedByEmail").value(recruiterA.getEmail()));
     }
+
+    @Test
+    void updateBulkCandidateStatus_AllOwnedCandidates_Succeeds() throws Exception {
+        stubJwt("tokenA", recruiterA.getId(), recruiterA.getEmail());
+
+        Candidate c1 = new Candidate();
+        c1.setJobPosting(postingA);
+        c1.setResumeFileUrl("http://cloudinary.com/c1.pdf");
+        c1.setPipelineStatus(PipelineStatus.NEW);
+        c1 = candidateRepository.saveAndFlush(c1);
+
+        Candidate c2 = new Candidate();
+        c2.setJobPosting(postingA);
+        c2.setResumeFileUrl("http://cloudinary.com/c2.pdf");
+        c2.setPipelineStatus(PipelineStatus.NEW);
+        c2 = candidateRepository.saveAndFlush(c2);
+
+        Candidate c3 = new Candidate();
+        c3.setJobPosting(postingA);
+        c3.setResumeFileUrl("http://cloudinary.com/c3.pdf");
+        c3.setPipelineStatus(PipelineStatus.NEW);
+        c3 = candidateRepository.saveAndFlush(c3);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        String payload = String.format(
+                "{\"candidateIds\":[\"%s\",\"%s\",\"%s\"],\"status\":\"shortlisted\"}",
+                c1.getId(), c2.getId(), c3.getId()
+        );
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/candidates/bulk-status")
+                        .header("Authorization", "Bearer tokenA")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.updated.length()").value(3))
+                .andExpect(jsonPath("$.skipped.length()").value(0))
+                .andExpect(jsonPath("$.updated[0]").value(c1.getId().toString()))
+                .andExpect(jsonPath("$.updated[1]").value(c2.getId().toString()))
+                .andExpect(jsonPath("$.updated[2]").value(c3.getId().toString()));
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // Assert candidate status updates and individual log records
+        for (UUID id : java.util.List.of(c1.getId(), c2.getId(), c3.getId())) {
+            Candidate updatedCand = candidateRepository.findById(id).get();
+            Assertions.assertEquals(PipelineStatus.SHORTLISTED, updatedCand.getPipelineStatus());
+
+            java.util.List<CandidateStatusLog> logs = candidateStatusLogRepository.findByCandidateIdOrderByCreatedAtDesc(id);
+            Assertions.assertEquals(1, logs.size());
+            Assertions.assertEquals(PipelineStatus.NEW, logs.get(0).getFromStatus());
+            Assertions.assertEquals(PipelineStatus.SHORTLISTED, logs.get(0).getToStatus());
+        }
+    }
+
+    @Test
+    void updateBulkCandidateStatus_MixedOwnership_SucceedsPartially() throws Exception {
+        stubJwt("tokenA", recruiterA.getId(), recruiterA.getEmail());
+
+        // Create owned candidates
+        Candidate c1 = new Candidate();
+        c1.setJobPosting(postingA);
+        c1.setResumeFileUrl("http://cloudinary.com/owned1.pdf");
+        c1.setPipelineStatus(PipelineStatus.NEW);
+        c1 = candidateRepository.saveAndFlush(c1);
+
+        Candidate c2 = new Candidate();
+        c2.setJobPosting(postingA);
+        c2.setResumeFileUrl("http://cloudinary.com/owned2.pdf");
+        c2.setPipelineStatus(PipelineStatus.NEW);
+        c2 = candidateRepository.saveAndFlush(c2);
+
+        // Create unowned candidate belonging to recruiterB
+        JobPosting postingB = new JobPosting();
+        postingB.setUser(recruiterB);
+        postingB.setTitle("Other Job");
+        postingB.setDescription("Other description");
+        postingB.setStatus(JobPostingStatus.ACTIVE);
+        postingB.setRequiredSkills(new String[]{"Java"});
+        postingB.setMinYearsExperience(2);
+        postingB = jobPostingRepository.saveAndFlush(postingB);
+
+        Candidate cUnowned = new Candidate();
+        cUnowned.setJobPosting(postingB);
+        cUnowned.setResumeFileUrl("http://cloudinary.com/unowned.pdf");
+        cUnowned.setPipelineStatus(PipelineStatus.NEW);
+        cUnowned = candidateRepository.saveAndFlush(cUnowned);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        String payload = String.format(
+                "{\"candidateIds\":[\"%s\",\"%s\",\"%s\"],\"status\":\"rejected\"}",
+                c1.getId(), c2.getId(), cUnowned.getId()
+        );
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/candidates/bulk-status")
+                        .header("Authorization", "Bearer tokenA")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.updated.length()").value(2))
+                .andExpect(jsonPath("$.skipped.length()").value(1))
+                .andExpect(jsonPath("$.updated[0]").value(c1.getId().toString()))
+                .andExpect(jsonPath("$.updated[1]").value(c2.getId().toString()))
+                .andExpect(jsonPath("$.skipped[0]").value(cUnowned.getId().toString()));
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // Assert owned are updated, unowned is NOT
+        Assertions.assertEquals(PipelineStatus.REJECTED, candidateRepository.findById(c1.getId()).get().getPipelineStatus());
+        Assertions.assertEquals(PipelineStatus.REJECTED, candidateRepository.findById(c2.getId()).get().getPipelineStatus());
+        Assertions.assertEquals(PipelineStatus.NEW, candidateRepository.findById(cUnowned.getId()).get().getPipelineStatus());
+    }
+
+    @Test
+    @org.springframework.transaction.annotation.Transactional(propagation = org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
+    void exportCandidates_OwnerRequest_SucceedsWithProperFormat() throws Exception {
+        stubJwt("tokenA", recruiterA.getId(), recruiterA.getEmail());
+
+        // Create a candidate with a comma in the name
+        Candidate c1 = new Candidate();
+        c1.setJobPosting(postingA);
+        c1.setName("Doe, John");
+        c1.setEmail("john.doe@example.com");
+        c1.setResumeFileUrl("http://cloudinary.com/doe.pdf");
+        c1.setResumeStatus(ResumeStatus.SCORED);
+        c1.setPipelineStatus(PipelineStatus.SHORTLISTED);
+        c1 = candidateRepository.saveAndFlush(c1);
+
+        CandidateScore score1 = new CandidateScore();
+        score1.setCandidate(c1);
+        score1.setOverallScore(95);
+        score1.setSkillsScore(90);
+        score1.setExperienceScore(95);
+        score1.setSeniorityScore(100);
+        score1.setMatchedSkills(new String[]{"Java", "Spring Boot"});
+        score1.setMissingSkills(new String[]{"Docker"});
+        score1.setSummary("Great candidate!");
+        score1.setScoredAt(java.time.OffsetDateTime.now());
+        candidateScoreRepository.saveAndFlush(score1);
+
+        org.springframework.test.web.servlet.MvcResult mvcResult = mockMvc.perform(get("/api/job-postings/" + postingA.getId() + "/candidates/export")
+                        .header("Authorization", "Bearer tokenA"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.request().asyncStarted())
+                .andReturn();
+
+        String responseCsv = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch(mvcResult))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Content-Type", "text/csv; charset=UTF-8"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Content-Disposition", org.hamcrest.Matchers.containsString("attachment; filename=\"candidates-")))
+                .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+
+        // Parse and verify the CSV response
+        org.apache.commons.csv.CSVParser csvParser = org.apache.commons.csv.CSVParser.parse(
+                responseCsv,
+                org.apache.commons.csv.CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).build()
+        );
+
+        java.util.List<org.apache.commons.csv.CSVRecord> records = csvParser.getRecords();
+        // Since we flushed and cleared L1 cache, postingA might have other candidates from before, but c1 must be present.
+        boolean foundC1 = false;
+        for (org.apache.commons.csv.CSVRecord record : records) {
+            if ("john.doe@example.com".equals(record.get("Email"))) {
+                foundC1 = true;
+                Assertions.assertEquals("Doe, John", record.get("Name"));
+                Assertions.assertEquals("95", record.get("Overall Score"));
+                Assertions.assertEquals("90", record.get("Skills Score"));
+                Assertions.assertEquals("95", record.get("Experience Score"));
+                Assertions.assertEquals("100", record.get("Seniority Score"));
+                Assertions.assertEquals("Java;Spring Boot", record.get("Matched Skills"));
+                Assertions.assertEquals("Docker", record.get("Missing Skills"));
+                Assertions.assertEquals("SHORTLISTED", record.get("Pipeline Status"));
+            }
+        }
+        Assertions.assertTrue(foundC1);
+    }
+
+    @Test
+    void exportCandidates_NonOwnerRequest_Returns404() throws Exception {
+        stubJwt("tokenB", recruiterB.getId(), recruiterB.getEmail());
+
+        mockMvc.perform(get("/api/job-postings/" + postingA.getId() + "/candidates/export")
+                        .header("Authorization", "Bearer tokenB"))
+                .andExpect(status().isNotFound());
+    }
 }
