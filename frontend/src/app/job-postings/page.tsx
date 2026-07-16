@@ -92,7 +92,7 @@ export default function JobPostingsPage() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-brand-border pb-6">
             <div>
-              <h1 className={`text-4xl font-medium tracking-tight ${fraunces.className}`}>
+              <h1 className={`text-3xl font-medium tracking-tight ${fraunces.className}`}>
                 Job Postings
               </h1>
               <p className="text-sm text-brand-text-secondary mt-1">
@@ -100,41 +100,41 @@ export default function JobPostingsPage() {
               </p>
             </div>
             <div>
-              <Link
-                href="/job-postings/create"
-                className="inline-flex justify-center items-center border border-brand-accent px-6 py-2.5 text-sm font-semibold rounded-lg text-brand-accent bg-transparent hover:bg-brand-accent/10 transition-all duration-200"
-              >
-                Create job posting
-              </Link>
-            </div>
+            <Link
+              href="/job-postings/create"
+              className="inline-flex justify-center items-center border border-brand-accent px-6 py-2.5 text-sm font-semibold rounded-lg text-brand-accent bg-transparent hover:bg-brand-accent/10 focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg focus-visible:outline-none transition-all duration-200"
+            >
+              Create job posting
+            </Link>
           </div>
+        </div>
 
-          {/* Filters Tab Bar */}
-          {status === 'success' && data.totalItems > 0 && (
-            <div className="flex border-b border-brand-border/60 pb-3 gap-6 text-sm">
-              <button
-                onClick={() => { setStatusFilter('ALL'); setPage(0); }}
-                className={`pb-2 transition-colors relative ${statusFilter === 'ALL' ? 'text-brand-accent font-semibold' : 'text-brand-text-secondary hover:text-brand-text-primary'}`}
-              >
-                All Postings
-                {statusFilter === 'ALL' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-accent" />}
-              </button>
-              <button
-                onClick={() => { setStatusFilter('ACTIVE'); setPage(0); }}
-                className={`pb-2 transition-colors relative ${statusFilter === 'ACTIVE' ? 'text-brand-accent-secondary font-semibold' : 'text-brand-text-secondary hover:text-brand-text-primary'}`}
-              >
-                Active
-                {statusFilter === 'ACTIVE' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-accent-secondary" />}
-              </button>
-              <button
-                onClick={() => { setStatusFilter('ARCHIVED'); setPage(0); }}
-                className={`pb-2 transition-colors relative ${statusFilter === 'ARCHIVED' ? 'text-brand-text-primary font-semibold' : 'text-brand-text-secondary hover:text-brand-text-primary'}`}
-              >
-                Archived
-                {statusFilter === 'ARCHIVED' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-text-primary" />}
-              </button>
-            </div>
-          )}
+        {/* Filters Tab Bar */}
+        {status === 'success' && data.totalItems > 0 && (
+          <div className="flex border-b border-brand-border/60 pb-3 gap-6 text-sm">
+            <button
+              onClick={() => { setStatusFilter('ALL'); setPage(0); }}
+              className={`pb-2 transition-colors relative focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg focus-visible:outline-none rounded ${statusFilter === 'ALL' ? 'text-brand-accent font-semibold' : 'text-brand-text-secondary hover:text-brand-text-primary'}`}
+            >
+              All Postings
+              {statusFilter === 'ALL' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-accent" />}
+            </button>
+            <button
+              onClick={() => { setStatusFilter('ACTIVE'); setPage(0); }}
+              className={`pb-2 transition-colors relative focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg focus-visible:outline-none rounded ${statusFilter === 'ACTIVE' ? 'text-brand-accent-secondary font-semibold' : 'text-brand-text-secondary hover:text-brand-text-primary'}`}
+            >
+              Active
+              {statusFilter === 'ACTIVE' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-accent-secondary" />}
+            </button>
+            <button
+              onClick={() => { setStatusFilter('ARCHIVED'); setPage(0); }}
+              className={`pb-2 transition-colors relative focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg focus-visible:outline-none rounded ${statusFilter === 'ARCHIVED' ? 'text-brand-text-primary font-semibold' : 'text-brand-text-secondary hover:text-brand-text-primary'}`}
+            >
+              Archived
+              {statusFilter === 'ARCHIVED' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-text-primary" />}
+            </button>
+          </div>
+        )}
 
           {/* LOADING STATE */}
           {status === 'pending' && (
@@ -204,7 +204,7 @@ export default function JobPostingsPage() {
               </div>
               <Link
                 href="/job-postings/create"
-                className="inline-flex justify-center items-center border border-brand-accent px-6 py-2.5 text-sm font-semibold rounded-lg text-brand-accent bg-transparent hover:bg-brand-accent/10 transition-all duration-200"
+                className="inline-flex justify-center items-center border border-brand-accent px-6 py-2.5 text-sm font-semibold rounded-lg text-brand-accent bg-transparent hover:bg-brand-accent/10 focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg focus-visible:outline-none transition-all duration-200"
               >
                 Create job posting
               </Link>
@@ -270,7 +270,7 @@ export default function JobPostingsPage() {
                   <div className="pt-4 flex gap-3 mt-4">
                     <Link
                       href={`/job-postings/${job.id}`}
-                      className="flex-1 text-center py-2 border border-brand-border rounded-lg text-xs font-semibold hover:border-brand-accent hover:text-brand-accent transition-colors"
+                      className="flex-1 text-center py-2 border border-brand-border rounded-lg text-xs font-semibold hover:border-brand-accent hover:text-brand-accent focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg focus-visible:outline-none transition-colors"
                     >
                       Details
                     </Link>
