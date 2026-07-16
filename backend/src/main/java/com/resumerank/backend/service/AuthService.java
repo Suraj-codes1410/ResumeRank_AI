@@ -15,6 +15,9 @@ import com.resumerank.backend.exception.InvalidTokenException;
 import com.resumerank.backend.repository.EmailVerificationTokenRepository;
 import com.resumerank.backend.repository.PasswordResetTokenRepository;
 import com.resumerank.backend.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,22 +31,30 @@ import java.nio.charset.StandardCharsets;
 @Service
 public class AuthService {
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final EmailService emailService;
+    private final String frontendUrl;
 
     public AuthService(UserRepository userRepository, 
                       PasswordEncoder passwordEncoder, 
                       JwtService jwtService,
                       EmailVerificationTokenRepository emailVerificationTokenRepository,
-                      PasswordResetTokenRepository passwordResetTokenRepository) {
+                      PasswordResetTokenRepository passwordResetTokenRepository,
+                      EmailService emailService,
+                      @Value("${app.frontend-url:http://localhost:3000}") String frontendUrl) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.emailVerificationTokenRepository = emailVerificationTokenRepository;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.emailService = emailService;
+        this.frontendUrl = frontendUrl;
     }
 
     @Transactional
@@ -68,9 +79,9 @@ public class AuthService {
         verificationToken.setUsed(false);
         emailVerificationTokenRepository.save(verificationToken);
 
-        // Log the verification link to console output (actual sending is out of scope for now)
-        String verificationLink = "http://localhost:8080/api/auth/verify-email?token=" + tokenString;
-        System.out.println("Verification link for user " + savedUser.getEmail() + ": " + verificationLink);
+        // Send verification email via Resend
+        String verificationLink = frontendUrl + "/verify-email?token=" + tokenString;
+        emailService.sendVerificationEmail(savedUser.getEmail(), verificationLink);
 
         return new SignupResponse(
             savedUser.getId(),
@@ -130,9 +141,9 @@ public class AuthService {
             resetToken.setUsed(false);
             passwordResetTokenRepository.save(resetToken);
 
-            // Log the reset link to console output (actual sending is out of scope for now)
-            String resetLink = "http://localhost:8081/api/auth/reset-password/confirm?token=" + rawToken;
-            System.out.println("Password reset link for " + user.getEmail() + ": " + resetLink);
+            // Send password reset email via Resend
+            String resetLink = frontendUrl + "/reset-password/confirm?token=" + rawToken;
+            emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
         }
     }
 
