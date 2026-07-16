@@ -93,6 +93,50 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
   const [batchFiles, setBatchFiles] = useState<BatchFile[]>([]);
   const [activeCandidateIds, setActiveCandidateIds] = useState<string[]>([]);
 
+  useEffect(() => {
+    if (!showArchiveConfirm) return;
+    const handleKeyDown = (e: any) => {
+      if (e.key === 'Escape') {
+        setShowArchiveConfirm(false);
+        return;
+      }
+      if (e.key === 'Tab') {
+        const modalElement = document.getElementById('archive-modal-content');
+        if (!modalElement) return;
+        const focusableElements = modalElement.querySelectorAll('button, [href], input, select, textarea, [tabindex="0"]');
+        if (focusableElements.length === 0) return;
+        const first = focusableElements[0] as HTMLElement;
+        const last = focusableElements[focusableElements.length - 1] as HTMLElement;
+        
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            last.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === last) {
+            first.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    };
+    
+    const previousFocus = document.activeElement as HTMLElement;
+    window.addEventListener('keydown', handleKeyDown);
+    
+    setTimeout(() => {
+      const modalElement = document.getElementById('archive-modal-content');
+      const firstFocusable = modalElement?.querySelector('button') as HTMLElement;
+      firstFocusable?.focus();
+    }, 50);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      previousFocus?.focus();
+    };
+  }, [showArchiveConfirm]);
+
   // Fetch job posting details
   const { data, status, error, refetch } = useQuery<JobPosting>({
     queryKey: ['jobPosting', id, accessToken],
@@ -759,8 +803,8 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                         type="text"
                         {...register('title')}
                         placeholder="e.g. Senior Software Architect"
-                        className={`w-full bg-brand-bg border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus:border-brand-accent ${
-                          errors.title ? 'border-rose-500/60 focus:border-rose-500' : 'border-brand-border'
+                        className={`w-full bg-brand-bg border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg ${
+                          errors.title ? 'border-rose-500/60 focus-visible:ring-rose-500' : 'border-brand-border'
                         }`}
                       />
                       {errors.title && (
@@ -778,8 +822,8 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                         rows={6}
                         {...register('description')}
                         placeholder="Describe the responsibilities..."
-                        className={`w-full bg-brand-bg border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus:border-brand-accent ${
-                          errors.description ? 'border-rose-500/60 focus:border-rose-500' : 'border-brand-border'
+                        className={`w-full bg-brand-bg border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg ${
+                          errors.description ? 'border-rose-500/60 focus-visible:ring-rose-500' : 'border-brand-border'
                         }`}
                       />
                       {errors.description && (
@@ -797,7 +841,7 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                         <select
                           id="seniorityLevel"
                           {...register('seniorityLevel')}
-                          className="w-full bg-brand-bg border border-brand-border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus:border-brand-accent"
+                          className="w-full bg-brand-bg border border-brand-border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg text-brand-text-primary"
                         >
                           <option value="">Select Casing...</option>
                           <option value="JUNIOR">Junior</option>
@@ -817,7 +861,7 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                           type="number"
                           placeholder="e.g. 5"
                           {...register('minYearsExperience', { valueAsNumber: true })}
-                          className="w-full bg-brand-bg border border-brand-border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus:border-brand-accent"
+                          className="w-full bg-brand-bg border border-brand-border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
                         />
                       </div>
                     </div>
@@ -834,7 +878,7 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                         onChange={(e) => setReqSkillInput(e.target.value)}
                         onKeyDown={(e) => handleAddSkill(e, 'required')}
                         placeholder="Type skill and press Enter"
-                        className="w-full bg-brand-bg border border-brand-border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus:border-brand-accent"
+                        className="w-full bg-brand-bg border border-brand-border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
                       />
                       {requiredSkills.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-2">
@@ -847,7 +891,7 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                               <button
                                 type="button"
                                 onClick={() => handleRemoveSkill(skill, 'required')}
-                                className="hover:text-rose-400 transition-colors"
+                                className="hover:text-rose-400 transition-colors focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg focus-visible:outline-none rounded"
                               >
                                 &times;
                               </button>
@@ -869,7 +913,7 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                         onChange={(e) => setNiceSkillInput(e.target.value)}
                         onKeyDown={(e) => handleAddSkill(e, 'nice')}
                         placeholder="Type skill and press Enter"
-                        className="w-full bg-brand-bg border border-brand-border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus:border-brand-accent"
+                        className="w-full bg-brand-bg border border-brand-border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
                       />
                       {niceToHaveSkills.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-2">
@@ -882,7 +926,7 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                               <button
                                 type="button"
                                 onClick={() => handleRemoveSkill(skill, 'nice')}
-                                className="hover:text-rose-400 transition-colors"
+                                className="hover:text-rose-400 transition-colors focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg focus-visible:outline-none rounded"
                               >
                                 &times;
                               </button>
@@ -893,17 +937,17 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                     </div>
 
                     {/* Actions */}
-                    <div className="border-t border-brand-border/40 pt-6 mt-6 flex justify-end gap-4">
+                    <div className="border-t border-brand-border/40 pt-6 mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-4">
                       <Link
                         href="/job-postings"
-                        className="px-5 py-2.5 border border-brand-border text-brand-text-secondary rounded-lg text-sm font-semibold hover:border-brand-text-primary hover:text-brand-text-primary transition-all"
+                        className="h-11 px-5 border border-brand-border text-brand-text-secondary rounded-lg text-sm font-semibold hover:border-brand-text-primary hover:text-brand-text-primary transition-all flex items-center justify-center w-full sm:w-auto focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg focus-visible:outline-none"
                       >
                         Back
                       </Link>
                       <button
                         type="submit"
                         disabled={updateMutation.isPending}
-                        className="border border-brand-accent bg-transparent text-brand-accent px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-brand-accent/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="h-11 px-6 border border-brand-accent bg-transparent text-brand-accent rounded-lg text-sm font-semibold hover:bg-brand-accent/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto flex items-center justify-center focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg focus-visible:outline-none"
                       >
                         {updateMutation.isPending ? 'Saving...' : 'Save Updates'}
                       </button>
@@ -923,14 +967,17 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                       Select a candidate's resume (PDF or DOCX format) to generate signature, upload to Cloudinary, and kickstart AI evaluation.
                     </p>
                     
-                    <div className="flex flex-col items-center justify-center border-2 border-dashed border-brand-border hover:border-brand-accent/50 rounded-lg p-6 bg-brand-bg/40 cursor-pointer relative group transition-all">
+                    <div className="flex flex-col items-center justify-center border-2 border-dashed border-brand-border hover:border-brand-accent/50 rounded-lg p-6 bg-brand-bg/40 cursor-pointer relative group transition-all has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-accent has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-brand-bg">
+                      <label htmlFor="resume-file-input" className="sr-only">
+                        Choose PDF or DOCX files to upload
+                      </label>
                       <input
                         type="file"
                         accept=".pdf,.docx"
                         multiple
                         onChange={handleFileChange}
                         disabled={batchFiles.some(f => f.status === 'uploading')}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none"
                         id="resume-file-input"
                       />
                       <div className="text-center space-y-2">
@@ -957,7 +1004,7 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                           {batchFiles.map((file) => (
                             <div key={file.id} className="p-3 bg-brand-bg/40 border border-brand-border rounded-lg space-y-2" data-testid={`batch-file-row-${file.name}`}>
                               <div className="flex items-center justify-between gap-4 text-xs">
-                                <span className="font-medium text-brand-text-primary truncate max-w-[200px]" title={file.name}>
+                                <span className="font-medium text-brand-text-primary truncate flex-1 min-w-0" title={file.name}>
                                   {file.name}
                                 </span>
                                 <span className={`font-semibold capitalize text-[10px] px-2 py-0.5 rounded-full ${
@@ -1000,7 +1047,7 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                       <button
                         type="button"
                         onClick={handleExportCsv}
-                        className="inline-flex items-center gap-1.5 border border-brand-accent px-4 py-1.5 rounded-lg text-xs font-semibold text-brand-accent hover:bg-brand-accent/10 transition-colors"
+                        className="inline-flex items-center gap-1.5 border border-brand-accent px-4 py-1.5 rounded-lg text-xs font-semibold text-brand-accent hover:bg-brand-accent/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg transition-colors"
                         data-testid="export-csv-button"
                       >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1020,7 +1067,7 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                           placeholder="Search candidates by name..."
                           value={searchInput}
                           onChange={(e) => setSearchInput(e.target.value)}
-                          className="w-full bg-brand-bg border border-brand-border rounded-lg px-3 py-2 text-xs transition-all focus:outline-none focus:border-brand-accent text-brand-text-primary"
+                          className="w-full bg-brand-bg border border-brand-border rounded-lg px-3 py-2 text-xs transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg text-brand-text-primary"
                           data-testid="filter-search"
                         />
                       </div>
@@ -1030,7 +1077,7 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                           id="filter-sort-select"
                           value={sort}
                           onChange={(e) => setSort(e.target.value)}
-                          className="w-full bg-brand-bg border border-brand-border rounded-lg px-3 py-2 text-xs transition-all focus:outline-none focus:border-brand-accent text-brand-text-primary"
+                          className="w-full bg-brand-bg border border-brand-border rounded-lg px-3 py-2 text-xs transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg text-brand-text-primary"
                           data-testid="filter-sort"
                         >
                           <option value="score_desc">Highest Score</option>
@@ -1040,17 +1087,21 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                         </select>
                       </div>
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-brand-text-secondary">Skills & Min Score</label>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-brand-text-secondary">Skills & Min Score</span>
                         <div className="flex items-center gap-2">
+                          <label htmlFor="filter-skill-input" className="sr-only">Filter by skill</label>
                           <input
+                            id="filter-skill-input"
                             type="text"
                             placeholder="Filter by skill..."
                             value={skill}
                             onChange={(e) => setSkill(e.target.value)}
-                            className="w-full bg-brand-bg border border-brand-border rounded-lg px-3 py-2 text-xs transition-all focus:outline-none focus:border-brand-accent text-brand-text-primary"
+                            className="w-full bg-brand-bg border border-brand-border rounded-lg px-3 py-2 text-xs transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg text-brand-text-primary"
                             data-testid="filter-skill"
                           />
+                          <label htmlFor="filter-min-score-input" className="sr-only">Minimum score</label>
                           <input
+                            id="filter-min-score-input"
                             type="number"
                             min="0"
                             max="100"
@@ -1060,7 +1111,7 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                               const val = e.target.value;
                               setMinScore(val === '' ? '' : Math.min(100, Math.max(0, parseInt(val, 10))));
                             }}
-                            className="w-28 bg-brand-bg border border-brand-border rounded-lg px-2 py-2 text-xs text-center transition-all focus:outline-none focus:border-brand-accent text-brand-text-primary"
+                            className="w-28 bg-brand-bg border border-brand-border rounded-lg px-2 py-2 text-xs text-center transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg text-brand-text-primary"
                             data-testid="filter-min-score"
                           />
                         </div>
@@ -1071,7 +1122,7 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                           id="filter-status-select"
                           value={resumeStatus}
                           onChange={(e) => setResumeStatus(e.target.value)}
-                          className="w-full bg-brand-bg border border-brand-border rounded-lg px-3 py-2 text-xs transition-all focus:outline-none focus:border-brand-accent text-brand-text-primary"
+                          className="w-full bg-brand-bg border border-brand-border rounded-lg px-3 py-2 text-xs transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg text-brand-text-primary"
                           data-testid="filter-resume-status"
                         >
                           <option value="">All Resume Statuses</option>
@@ -1089,12 +1140,13 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                         <div className="text-xs font-semibold text-brand-text-primary">
                           {selectedCandidateIds.length} candidate{selectedCandidateIds.length === 1 ? '' : 's'} selected
                         </div>
-                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+                          <label htmlFor="bulk-status-select" className="sr-only">Bulk change status</label>
                           <select
                             id="bulk-status-select"
                             value={bulkStatus}
                             onChange={(e) => setBulkStatus(e.target.value)}
-                            className="bg-brand-bg border border-brand-border rounded-lg px-3 py-2 text-xs transition-all focus:outline-none focus:border-brand-accent text-brand-text-primary"
+                            className="h-11 px-3 bg-brand-bg border border-brand-border rounded-lg text-xs transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg text-brand-text-primary w-full sm:w-40"
                             data-testid="bulk-status-select"
                           >
                             <option value="NEW">New</option>
@@ -1106,7 +1158,7 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                             type="button"
                             onClick={handleBulkStatusApply}
                             disabled={bulkStatusMutation.isPending}
-                            className="bg-brand-accent border border-brand-accent text-brand-bg px-4 py-2 rounded-lg text-xs font-bold hover:bg-brand-accent/80 transition-all disabled:opacity-50"
+                            className="h-11 px-6 bg-brand-accent border border-brand-accent text-brand-bg rounded-lg text-xs font-bold hover:bg-brand-accent/80 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg disabled:opacity-50 w-full sm:w-auto flex items-center justify-center"
                             data-testid="bulk-apply-button"
                           >
                             {bulkStatusMutation.isPending ? 'Applying...' : 'Apply'}
@@ -1132,7 +1184,7 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                                   setSelectedCandidateIds(prev => prev.filter(id => !currentIds.includes(id)));
                                 }
                               }}
-                              className="rounded border-neutral-700 bg-neutral-900 text-brand-accent focus:ring-brand-accent/30 h-4 w-4"
+                              className="rounded border-neutral-700 bg-neutral-900 text-brand-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg h-4 w-4"
                               data-testid="select-all-checkbox"
                             />
                             <span>Select all on currently loaded page</span>
@@ -1178,26 +1230,31 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                                         setSelectedCandidateIds(prev => prev.filter(id => id !== candidate.id));
                                       }
                                     }}
-                                    className="rounded border-neutral-700 bg-neutral-900 text-brand-accent focus:ring-brand-accent/30 h-4 w-4"
+                                    className="rounded border-neutral-700 bg-neutral-900 text-brand-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg h-4 w-4"
                                     data-testid={`row-checkbox-${index}`}
                                   />
                                 </div>
 
                                 <div className="flex-1 min-w-0 space-y-3">
-                                  <div className="flex items-start justify-between gap-4">
+                                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
                                     <div className="space-y-1 min-w-0">
                                       <a
                                         href={candidate.resumeFileUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         onClick={(e) => e.stopPropagation()}
-                                        className="text-sm font-semibold text-brand-accent hover:underline block truncate"
+                                        className="text-sm font-semibold text-brand-accent hover:underline focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg focus-visible:outline-none rounded block truncate"
                                       >
                                         {fileName}
                                       </a>
-                                      <p className="text-xs text-brand-text-primary font-medium">
-                                        {candidate.name || 'Name: Extraction pending'}
-                                      </p>
+                                      <div onClick={(e) => e.stopPropagation()}>
+                                        <Link
+                                          href={`/candidates/${candidate.id}`}
+                                          className="text-xs text-brand-text-primary font-semibold hover:underline focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg focus-visible:outline-none rounded block mt-0.5"
+                                        >
+                                          {candidate.name || 'Name: Extraction pending'}
+                                        </Link>
+                                      </div>
                                       <p className="text-xs text-brand-text-secondary truncate">
                                         {candidate.email || 'Email: Extraction pending'}
                                       </p>
@@ -1223,7 +1280,7 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                                           type="button"
                                           onClick={() => retryMutation.mutate(candidate.resumeFileUrl)}
                                           disabled={retryMutation.isPending}
-                                          className="inline-flex justify-center items-center border border-brand-accent/50 px-3 py-1.5 text-xs font-semibold rounded-lg text-brand-accent hover:bg-brand-accent/15 transition-all disabled:opacity-50"
+                                          className="inline-flex justify-center items-center border border-brand-accent/50 px-3 py-1.5 text-xs font-semibold rounded-lg text-brand-accent hover:bg-brand-accent/15 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg disabled:opacity-50"
                                           data-testid="retry-button"
                                         >
                                           {retryMutation.isPending ? 'Retrying...' : 'Retry'}
@@ -1245,7 +1302,7 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                               type="button"
                               onClick={() => fetchNextPage()}
                               disabled={isFetchingNextPage}
-                              className="border border-brand-accent bg-transparent text-brand-accent px-5 py-2 rounded-lg text-xs font-semibold hover:bg-brand-accent/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="border border-brand-accent bg-transparent text-brand-accent px-5 py-2 rounded-lg text-xs font-semibold hover:bg-brand-accent/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                               data-testid="load-more-button"
                             >
                               {isFetchingNextPage ? 'Loading more...' : 'Load More Candidates'}
@@ -1263,7 +1320,7 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                             <button
                               type="button"
                               onClick={handleResetFilters}
-                              className="border border-brand-accent text-brand-accent px-4 py-2 rounded-lg text-xs font-semibold hover:bg-brand-accent/10 transition-all"
+                              className="border border-brand-accent text-brand-accent px-4 py-2 rounded-lg text-xs font-semibold hover:bg-brand-accent/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg transition-all"
                               data-testid="reset-filters-button"
                             >
                               Reset Filters
@@ -1289,10 +1346,10 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
 
           {/* ARCHIVE CONFIRMATION MODAL */}
           {showArchiveConfirm && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in" data-testid="archive-modal">
-              <div className="bg-brand-surface border border-brand-border rounded-xl max-w-md w-full p-6 space-y-6 shadow-2xl animate-zoom-in">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in" data-testid="archive-modal" role="dialog" aria-modal="true" aria-labelledby="archive-modal-title">
+              <div id="archive-modal-content" className="bg-brand-surface border border-brand-border rounded-xl max-w-md w-full p-6 space-y-6 shadow-2xl animate-zoom-in">
                 <div className="space-y-2">
-                  <h3 className={`text-xl font-medium tracking-tight text-brand-text-primary ${fraunces.className}`}>
+                  <h3 id="archive-modal-title" className={`text-xl font-medium tracking-tight text-brand-text-primary ${fraunces.className}`}>
                     Archive Job Posting?
                   </h3>
                   <p className="text-sm text-brand-text-secondary leading-relaxed">
@@ -1303,14 +1360,14 @@ export default function JobPostingDetailPage({ params }: { params: Promise<{ id:
                   <button
                     type="button"
                     onClick={() => setShowArchiveConfirm(false)}
-                    className="px-4 py-2 border border-brand-border text-brand-text-secondary rounded-lg text-xs font-semibold hover:border-brand-text-primary hover:text-brand-text-primary transition-colors"
+                    className="px-4 py-2 border border-brand-border text-brand-text-secondary rounded-lg text-xs font-semibold hover:border-brand-text-primary hover:text-brand-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg transition-colors"
                   >
                     No, Cancel
                   </button>
                   <button
                     type="button"
                     onClick={handleToggleStatus}
-                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold transition-colors"
+                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg transition-colors"
                   >
                     Yes, Archive
                   </button>
