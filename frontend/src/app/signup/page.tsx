@@ -7,6 +7,7 @@ import * as z from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import axios from 'axios';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Fraunces, Inter } from 'next/font/google';
 import { apiClient } from '@/lib/api-client';
 
@@ -36,6 +37,8 @@ const signupSchema = z.object({
 type SignupFormValues = z.infer<typeof signupSchema>;
 
 export default function SignupPage() {
+  const router = useRouter();
+
   const {
     register,
     handleSubmit,
@@ -56,6 +59,7 @@ export default function SignupPage() {
     },
     onSuccess: () => {
       reset();
+      router.push('/login?registered=true');
     },
   });
 

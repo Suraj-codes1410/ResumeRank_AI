@@ -1,9 +1,17 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import SignupPage from './page';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
+
+// Mock useRouter
+const mockPush = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+  }),
+}));
 
 // Mock the API client
 vi.mock('@/lib/api-client', () => ({
@@ -25,6 +33,10 @@ const createTestQueryClient = () =>
   });
 
 describe('SignupPage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('renders required fields', () => {
     const queryClient = createTestQueryClient();
     render(
@@ -92,6 +104,40 @@ describe('SignupPage', () => {
     
     await waitFor(() => {
       expect(submitButton).not.toBeDisabled();
+    });
+  });
+
+  it('redirects to login page with registered query param on successful signup', async () => {
+    const queryClient = createTestQueryClient();
+    
+    vi.mocked(apiClient.post).mockResolvedValue({
+      data: {
+        id: 'new-user-uuid',
+        email: 'test@example.com',
+        createdAt: '2026-07-16T15:00:00Z',
+      },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <SignupPage />
+      </QueryClientProvider>
+    );
+
+    const emailInput = screen.getByLabelText(/email address/i);
+    const passwordInput = screen.getByLabelText(/password/i);
+    const submitButton = screen.getByRole('button', { name: /sign up/i });
+
+    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+    fireEvent.change(passwordInput, { target: { value: 'password123' } });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(apiClient.post).toHaveBeenCalledWith('/auth/signup', {
+        email: 'test@example.com',
+        password: 'password123',
+      });
+      expect(mockPush).toHaveBeenCalledWith('/login?registered=true');
     });
   });
 });
