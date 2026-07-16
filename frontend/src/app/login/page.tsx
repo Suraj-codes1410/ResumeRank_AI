@@ -1,12 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import axios from 'axios';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Fraunces, Inter } from 'next/font/google';
 import { apiClient } from '@/lib/api-client';
 import { useAuth } from '@/context/auth-context';
@@ -37,6 +38,17 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const { setAuth } = useAuth();
+  const router = useRouter();
+  const [registered, setRegistered] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('registered') === 'true') {
+        setRegistered(true);
+      }
+    }
+  }, []);
 
   const {
     register,
@@ -59,6 +71,7 @@ export default function LoginPage() {
     onSuccess: (data) => {
       setAuth(data.accessToken);
       reset();
+      router.push('/job-postings');
     },
   });
 
@@ -89,6 +102,14 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
+
+        {registered && (
+          <div className="rounded bg-brand-accent-secondary/10 border border-brand-accent-secondary/30 p-4">
+            <div className="text-sm font-medium text-brand-accent-secondary">
+              Account created successfully! A verification link has been sent to your email.
+            </div>
+          </div>
+        )}
 
         {mutation.isSuccess && (
           <div className="space-y-3">
