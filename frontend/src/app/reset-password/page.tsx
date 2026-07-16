@@ -102,7 +102,7 @@ export default function ResetPasswordRequestPage() {
                 type="email"
                 autoComplete="email"
                 {...register('email')}
-                className={`appearance-none rounded-lg relative block w-full px-3 py-2.5 border bg-brand-bg/40 text-brand-text-primary placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-all duration-200 ${
+                className={`appearance-none rounded-lg relative block w-full px-3 py-2.5 border bg-brand-bg/40 text-brand-text-primary placeholder-neutral-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg transition-all duration-200 ${
                   errors.email ? 'border-rose-500/60' : 'border-brand-border'
                 }`}
                 placeholder="you@example.com"
@@ -117,7 +117,7 @@ export default function ResetPasswordRequestPage() {
             <div className="text-sm">
               <Link
                 href="/login"
-                className="font-medium text-brand-text-secondary hover:text-brand-text-primary transition-colors"
+                className="font-medium text-brand-text-secondary hover:text-brand-text-primary transition-colors focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg focus-visible:outline-none rounded"
               >
                 Back to sign in
               </Link>
@@ -128,7 +128,7 @@ export default function ResetPasswordRequestPage() {
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="group relative w-full flex justify-center py-2.5 px-4 border border-brand-accent text-sm font-semibold rounded-lg text-brand-accent bg-transparent hover:bg-brand-accent/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-bg focus:ring-brand-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
+              className="group relative w-full flex justify-center py-2.5 px-4 border border-brand-accent text-sm font-semibold rounded-lg text-brand-accent bg-transparent hover:bg-brand-accent/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg focus-visible:ring-brand-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
             >
               {mutation.isPending ? (
                 <svg

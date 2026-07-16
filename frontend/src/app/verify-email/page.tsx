@@ -93,7 +93,7 @@ function VerifyEmailForm() {
           </div>
           <Link
             href="/login"
-            className="inline-flex justify-center items-center border border-brand-accent px-6 py-2.5 text-sm font-semibold rounded-lg text-brand-accent bg-transparent hover:bg-brand-accent/10 transition-all duration-200"
+            className="inline-flex justify-center items-center border border-brand-accent px-6 py-2.5 text-sm font-semibold rounded-lg text-brand-accent bg-transparent hover:bg-brand-accent/10 focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg focus-visible:outline-none transition-all duration-200"
           >
             Sign in now
           </Link>
@@ -109,7 +109,7 @@ function VerifyEmailForm() {
           </div>
           <Link
             href="/signup"
-            className="text-sm font-semibold text-brand-accent hover:text-brand-accent/80 transition-colors"
+            className="text-sm font-semibold text-brand-accent hover:text-brand-accent/80 transition-colors focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg focus-visible:outline-none rounded"
           >
             Back to Sign up
           </Link>
