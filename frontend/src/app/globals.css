@@ -32,6 +32,25 @@ body {
   --color-brand-text-primary: #E8E6E1;
   --color-brand-text-secondary: #9A9690;
   --color-brand-accent: #C99A52;
-  --color-brand-accent-secondary: #5C8C7B;
+  --color-brand-accent-secondary: #649987; /* Adjusted from #5C8C7B to meet WCAG AA 4.5:1 contrast ratio */
+
+  /* Radius overrides to enforce consistent base radius of 8px */
+  --radius-sm: 8px;
+  --radius-md: 8px;
+  --radius-lg: 8px;
+  --radius-xl: 8px;
+  --radius-2xl: 8px;
+
+  /* Font size overrides matching {12, 14, 16, 20, 24, 32, 48}px */
+  --font-size-lg: 20px;
+  --font-size-3xl: 32px;
+
+  /* Spacing overrides mapping non-compliant classes to nearest allowed scale steps */
+  --spacing-1\.5: 8px;
+  --spacing-2\.5: 12px;
+  --spacing-3\.5: 16px;
+  --spacing-5: 24px;
+  --spacing-10: 32px;
+  --spacing-20: 64px;
 }
 
