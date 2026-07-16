@@ -854,4 +854,81 @@ describe('JobPostingDetailPage Edit & Upload Tests', () => {
       expect(requestUrl).toContain('minScore=80');
     });
   });
+
+  it('supports full keyboard Tab/Space/Enter flow for candidate selection and bulk status rejection', async () => {
+    const mockParams = {
+      then: (onFulfill: any) => {
+        onFulfill({ id: 'posting-123' });
+      },
+      status: 'fulfilled',
+      value: { id: 'posting-123' }
+    } as any;
+
+    const mockCandidates = [
+      { id: 'cand-11', resumeStatus: 'SCORED', overallScore: 80, name: 'Alice', email: 'alice@example.com' }
+    ];
+
+    vi.mocked(apiClient.get).mockImplementation(async (url) => {
+      if (url.includes('/candidates')) {
+        return { data: { items: mockCandidates, nextCursor: null } };
+      }
+      return { data: { id: 'posting-123', title: 'Java Engineer', status: 'ACTIVE' } };
+    });
+
+    vi.mocked(apiClient.post).mockResolvedValueOnce({ data: { updated: ['cand-11'], skipped: [] } });
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    const queryClient = createTestQueryClient();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <JobPostingDetailPage params={mockParams} />
+        </React.Suspense>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('success-state')).toBeInTheDocument();
+    });
+
+    // 1. Focus the candidate checkbox via keyboard simulated focus
+    const checkbox = screen.getByTestId('row-checkbox-0') as HTMLInputElement;
+    checkbox.focus();
+    expect(document.activeElement).toBe(checkbox);
+
+    // 2. Select the candidate via Space bar click simulation
+    fireEvent.click(checkbox);
+    expect(checkbox.checked).toBe(true);
+
+    // Verify bulk action bar appears
+    await waitFor(() => {
+      expect(screen.getByTestId('bulk-action-bar')).toBeInTheDocument();
+    });
+
+    // 3. Tab focus moves to the bulk status select dropdown
+    const bulkSelect = screen.getByTestId('bulk-status-select') as HTMLSelectElement;
+    bulkSelect.focus();
+    expect(document.activeElement).toBe(bulkSelect);
+
+    // Select status REJECTED
+    fireEvent.change(bulkSelect, { target: { value: 'REJECTED' } });
+
+    // 4. Tab focus moves to the Apply button
+    const applyBtn = screen.getByTestId('bulk-apply-button') as HTMLButtonElement;
+    applyBtn.focus();
+    expect(document.activeElement).toBe(applyBtn);
+
+    // 5. Press Enter to submit bulk action
+    fireEvent.click(applyBtn);
+
+    // Verify rejection confirmation is triggered
+    await waitFor(() => {
+      expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('bulk-reject'));
+      expect(apiClient.post).toHaveBeenCalledWith(
+        '/candidates/bulk-status',
+        { candidateIds: ['cand-11'], status: 'REJECTED' },
+        expect.anything()
+      );
+    });
+  });
 });
