@@ -2,6 +2,9 @@ package com.resumerank.backend.service;
 
 import com.resumerank.backend.dto.ResetPasswordConfirmRequest;
 import com.resumerank.backend.dto.ResetPasswordRequest;
+import com.resumerank.backend.dto.SignupRequest;
+import com.resumerank.backend.dto.SignupResponse;
+import com.resumerank.backend.entity.EmailVerificationToken;
 import com.resumerank.backend.entity.PasswordResetToken;
 import com.resumerank.backend.entity.User;
 import com.resumerank.backend.exception.InvalidTokenException;
@@ -16,6 +19,7 @@ import org.mockito.Mockito;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.OffsetDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 class AuthServiceTest {
 
@@ -24,7 +28,10 @@ class AuthServiceTest {
     private JwtService jwtService;
     private EmailVerificationTokenRepository emailVerificationTokenRepository;
     private PasswordResetTokenRepository passwordResetTokenRepository;
+    private EmailService emailService;
     private AuthService authService;
+
+    private static final String FRONTEND_URL = "http://localhost:3000";
 
     @BeforeEach
     void setUp() {
@@ -33,18 +40,59 @@ class AuthServiceTest {
         jwtService = Mockito.mock(JwtService.class);
         emailVerificationTokenRepository = Mockito.mock(EmailVerificationTokenRepository.class);
         passwordResetTokenRepository = Mockito.mock(PasswordResetTokenRepository.class);
+        emailService = Mockito.mock(EmailService.class);
 
         authService = new AuthService(
                 userRepository,
                 passwordEncoder,
                 jwtService,
                 emailVerificationTokenRepository,
-                passwordResetTokenRepository
+                passwordResetTokenRepository,
+                emailService,
+                FRONTEND_URL
         );
     }
 
     @Test
-    void requestPasswordReset_ExistingEmail_GeneratesTokenRecord() {
+    void signup_Success_SendsVerificationEmailWithCorrectRecipientAndLink() {
+        User savedUser = new User();
+        savedUser.setId(UUID.randomUUID());
+        savedUser.setEmail("newuser@example.com");
+        savedUser.setCreatedAt(OffsetDateTime.now());
+
+        Mockito.when(userRepository.existsByEmail("newuser@example.com")).thenReturn(false);
+        Mockito.when(passwordEncoder.encode("securePass123")).thenReturn("hashedPassword");
+        Mockito.when(userRepository.saveAndFlush(Mockito.any(User.class))).thenReturn(savedUser);
+
+        SignupRequest request = new SignupRequest("newuser@example.com", "securePass123");
+        SignupResponse response = authService.signup(request);
+
+        // Verify the signup response is correct
+        Assertions.assertNotNull(response);
+        Assertions.assertEquals("newuser@example.com", response.email());
+
+        // Verify the verification token was saved
+        ArgumentCaptor<EmailVerificationToken> tokenCaptor = ArgumentCaptor.forClass(EmailVerificationToken.class);
+        Mockito.verify(emailVerificationTokenRepository, Mockito.times(1)).save(tokenCaptor.capture());
+        EmailVerificationToken savedToken = tokenCaptor.getValue();
+        Assertions.assertNotNull(savedToken.getToken());
+        Assertions.assertFalse(savedToken.getUsed());
+
+        // Verify EmailService.sendVerificationEmail was called with correct recipient and a valid link
+        ArgumentCaptor<String> emailCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> linkCaptor = ArgumentCaptor.forClass(String.class);
+        Mockito.verify(emailService, Mockito.times(1))
+                .sendVerificationEmail(emailCaptor.capture(), linkCaptor.capture());
+
+        Assertions.assertEquals("newuser@example.com", emailCaptor.getValue());
+        Assertions.assertTrue(linkCaptor.getValue().startsWith(FRONTEND_URL + "/verify-email?token="));
+        // The token in the link should match the one that was saved
+        String tokenInLink = linkCaptor.getValue().replace(FRONTEND_URL + "/verify-email?token=", "");
+        Assertions.assertEquals(savedToken.getToken(), tokenInLink);
+    }
+
+    @Test
+    void requestPasswordReset_ExistingEmail_SendsResetEmailWithCorrectRecipientAndLink() {
         User user = new User();
         user.setEmail("user@example.com");
 
@@ -53,25 +101,34 @@ class AuthServiceTest {
         ResetPasswordRequest request = new ResetPasswordRequest("user@example.com");
         authService.requestPasswordReset(request);
 
+        // Verify the reset token was saved
         ArgumentCaptor<PasswordResetToken> tokenCaptor = ArgumentCaptor.forClass(PasswordResetToken.class);
         Mockito.verify(passwordResetTokenRepository, Mockito.times(1)).save(tokenCaptor.capture());
-
         PasswordResetToken savedToken = tokenCaptor.getValue();
         Assertions.assertNotNull(savedToken);
         Assertions.assertEquals(user, savedToken.getUser());
-        Assertions.assertNotNull(savedToken.getTokenHash());
         Assertions.assertFalse(savedToken.getUsed());
         Assertions.assertTrue(savedToken.getExpiresAt().isAfter(OffsetDateTime.now()));
+
+        // Verify EmailService.sendPasswordResetEmail was called with the correct email
+        ArgumentCaptor<String> emailCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> linkCaptor = ArgumentCaptor.forClass(String.class);
+        Mockito.verify(emailService, Mockito.times(1))
+                .sendPasswordResetEmail(emailCaptor.capture(), linkCaptor.capture());
+
+        Assertions.assertEquals("user@example.com", emailCaptor.getValue());
+        Assertions.assertTrue(linkCaptor.getValue().startsWith(FRONTEND_URL + "/reset-password/confirm?token="));
     }
 
     @Test
-    void requestPasswordReset_NonexistentEmail_DoesNotGenerateTokenRecord() {
+    void requestPasswordReset_NonexistentEmail_DoesNotSendEmail() {
         Mockito.when(userRepository.findByEmail("nonexistent@example.com")).thenReturn(Optional.empty());
 
         ResetPasswordRequest request = new ResetPasswordRequest("nonexistent@example.com");
         authService.requestPasswordReset(request);
 
         Mockito.verify(passwordResetTokenRepository, Mockito.never()).save(Mockito.any());
+        Mockito.verify(emailService, Mockito.never()).sendPasswordResetEmail(Mockito.anyString(), Mockito.anyString());
     }
 
     @Test
