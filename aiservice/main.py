@@ -174,7 +174,7 @@ def get_llm():
             openai_api_base="https://openrouter.ai/api/v1",
             model_name=model,
             temperature=0.0,
-            max_tokens=2000
+            max_tokens=1024
         )
     else:
         return ChatOpenAI(
@@ -196,24 +196,35 @@ Job Details:
 
 Evaluate this Candidate Resume:
 {resumeText}
+
+You MUST respond with ONLY a valid JSON object (no markdown, no extra text) in exactly this format:
+{{
+  "overallScore": <int 0-100>,
+  "skillsScore": <int 0-100>,
+  "experienceScore": <int 0-100>,
+  "seniorityScore": <int 0-100>,
+  "matchedSkills": ["skill1", "skill2"],
+  "missingSkills": ["skill1", "skill2"],
+  "yearsExperienceDetected": <float or null>,
+  "summary": "1-2 sentence summary of the candidate's suitability"
+}}
 """
 
-RETRY_SYSTEM_PROMPT = """You previously returned a response that failed validation constraints.
-We require all scores (overallScore, skillsScore, experienceScore, seniorityScore) to be integers strictly between 0 and 100 inclusive.
-matchedSkills and missingSkills must be arrays of strings, and summary must be non-empty (1-2 sentences).
+import json
 
-Please re-evaluate and return valid scores strictly within the 0 to 100 range.
-
-Job Details:
-- Title: {jobTitle}
-- Description: {jobDescription}
-- Required Skills: {requiredSkills}
-- Nice-to-Have Skills: {niceToHaveSkills}
-- Minimum Years of Experience Required: {minYearsExperience}
-
-Candidate Resume:
-{resumeText}
-"""
+def parse_score_json(text: str) -> Optional[CandidateScoreResponse]:
+    """Parse LLM text response into a CandidateScoreResponse."""
+    cleaned = text.strip()
+    # Strip markdown code fences if present
+    if cleaned.startswith("```"):
+        lines = cleaned.split("\n")
+        lines = [l for l in lines if not l.strip().startswith("```")]
+        cleaned = "\n".join(lines).strip()
+    try:
+        data = json.loads(cleaned)
+        return CandidateScoreResponse(**data)
+    except (json.JSONDecodeError, Exception):
+        return None
 
 async def run_scoring(
     resume_text: str,
@@ -225,45 +236,37 @@ async def run_scoring(
 ) -> dict:
     try:
         llm = get_llm()
-        structured_llm = llm.with_structured_output(CandidateScoreResponse)
         
         prompt = ChatPromptTemplate.from_messages([
             ("system", SYSTEM_PROMPT),
         ])
-        chain = prompt | structured_llm
+        chain = prompt | llm
         
-        result = chain.invoke({
+        invoke_params = {
             "jobTitle": job_title,
             "jobDescription": job_description,
             "requiredSkills": ", ".join(required_skills),
             "niceToHaveSkills": ", ".join(nice_to_have_skills),
             "minYearsExperience": min_years_exp if min_years_exp is not None else "None",
             "resumeText": resume_text
-        })
+        }
         
-        if validate_score(result):
+        ai_message = chain.invoke(invoke_params)
+        result = parse_score_json(ai_message.content)
+        
+        if result and validate_score(result):
             return {"success": True, "score": result.model_dump()}
             
-        retry_prompt = ChatPromptTemplate.from_messages([
-            ("system", RETRY_SYSTEM_PROMPT),
-        ])
-        retry_chain = retry_prompt | structured_llm
+        # Retry once if parsing or validation failed
+        ai_message = chain.invoke(invoke_params)
+        result = parse_score_json(ai_message.content)
         
-        result = retry_chain.invoke({
-            "jobTitle": job_title,
-            "jobDescription": job_description,
-            "requiredSkills": ", ".join(required_skills),
-            "niceToHaveSkills": ", ".join(nice_to_have_skills),
-            "minYearsExperience": min_years_exp if min_years_exp is not None else "None",
-            "resumeText": resume_text
-        })
-        
-        if validate_score(result):
+        if result and validate_score(result):
             return {"success": True, "score": result.model_dump()}
         else:
             return {
                 "success": False,
-                "error": "LLM response failed validation twice. Clamping bounds violated.",
+                "error": "LLM response failed validation twice.",
                 "status_code": 422
             }
             
