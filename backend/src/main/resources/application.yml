@@ -26,3 +26,10 @@ cloudinary:
   api-key: ${CLOUDINARY_API_KEY:437827782945956}
   api-secret: ${CLOUDINARY_API_SECRET:jDGM09e7HqnqWoWnyUoxsJvUHXk}
 
+resend:
+  api-key: ${RESEND_API_KEY:}
+  from-address: ${RESEND_FROM_ADDRESS:onboarding@resend.dev}
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+
