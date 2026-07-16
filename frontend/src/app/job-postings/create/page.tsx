@@ -177,8 +177,8 @@ export default function CreateJobPostingPage() {
                 type="text"
                 {...register('title')}
                 placeholder="e.g. Senior Software Architect"
-                className={`w-full bg-brand-bg border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus:border-brand-accent ${
-                  errors.title ? 'border-rose-500/60 focus:border-rose-500' : 'border-brand-border'
+                className={`w-full bg-brand-bg border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg ${
+                  errors.title ? 'border-rose-500/60 focus-visible:ring-rose-500' : 'border-brand-border'
                 }`}
               />
               {errors.title && (
@@ -196,8 +196,8 @@ export default function CreateJobPostingPage() {
                 rows={6}
                 {...register('description')}
                 placeholder="Describe the responsibilities, project scope, and daily requirements..."
-                className={`w-full bg-brand-bg border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus:border-brand-accent ${
-                  errors.description ? 'border-rose-500/60 focus:border-rose-500' : 'border-brand-border'
+                className={`w-full bg-brand-bg border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg ${
+                  errors.description ? 'border-rose-500/60 focus-visible:ring-rose-500' : 'border-brand-border'
                 }`}
               />
               {errors.description && (
@@ -215,7 +215,7 @@ export default function CreateJobPostingPage() {
                 <select
                   id="seniorityLevel"
                   {...register('seniorityLevel')}
-                  className="w-full bg-brand-bg border border-brand-border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus:border-brand-accent"
+                  className="w-full bg-brand-bg border border-brand-border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg text-brand-text-primary"
                 >
                   <option value="">Select Casing...</option>
                   <option value="JUNIOR">Junior</option>
@@ -235,7 +235,7 @@ export default function CreateJobPostingPage() {
                   type="number"
                   placeholder="e.g. 5"
                   {...register('minYearsExperience', { valueAsNumber: true })}
-                  className="w-full bg-brand-bg border border-brand-border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus:border-brand-accent"
+                  className="w-full bg-brand-bg border border-brand-border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
                 />
               </div>
             </div>
@@ -255,7 +255,7 @@ export default function CreateJobPostingPage() {
                 onChange={(e) => setReqSkillInput(e.target.value)}
                 onKeyDown={(e) => handleAddSkill(e, 'required')}
                 placeholder="e.g. React, Python"
-                className="w-full bg-brand-bg border border-brand-border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus:border-brand-accent"
+                className="w-full bg-brand-bg border border-brand-border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
               />
               {requiredSkills.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
@@ -294,7 +294,7 @@ export default function CreateJobPostingPage() {
                 onChange={(e) => setNiceSkillInput(e.target.value)}
                 onKeyDown={(e) => handleAddSkill(e, 'nice')}
                 placeholder="e.g. Kubernetes, Figma"
-                className="w-full bg-brand-bg border border-brand-border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus:border-brand-accent"
+                className="w-full bg-brand-bg border border-brand-border rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
               />
               {niceToHaveSkills.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
@@ -307,7 +307,7 @@ export default function CreateJobPostingPage() {
                       <button
                         type="button"
                         onClick={() => handleRemoveSkill(skill, 'nice')}
-                        className="hover:text-rose-400 transition-colors"
+                        className="hover:text-rose-400 transition-colors focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg focus-visible:outline-none rounded"
                         aria-label={`Remove nice-to-have skill ${skill}`}
                       >
                         &times;
@@ -319,18 +319,18 @@ export default function CreateJobPostingPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="border-t border-brand-border/40 pt-6 mt-6 flex justify-end gap-4">
+            <div className="border-t border-brand-border/40 pt-6 mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-4">
               <button
                 type="button"
                 onClick={() => router.push('/job-postings')}
-                className="px-5 py-2.5 border border-brand-border text-brand-text-secondary rounded-lg text-sm font-semibold hover:border-brand-text-primary hover:text-brand-text-primary transition-all"
+                className="h-11 px-5 border border-brand-border text-brand-text-secondary rounded-lg text-sm font-semibold hover:border-brand-text-primary hover:text-brand-text-primary focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg focus-visible:outline-none transition-all flex items-center justify-center w-full sm:w-auto"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={createMutation.isPending}
-                className="border border-brand-accent bg-transparent text-brand-accent px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-brand-accent/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-11 px-6 border border-brand-accent bg-transparent text-brand-accent rounded-lg text-sm font-semibold hover:bg-brand-accent/10 focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg focus-visible:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center w-full sm:w-auto"
               >
                 {createMutation.isPending ? 'Publishing...' : 'Publish Job Posting'}
               </button>
