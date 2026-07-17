@@ -76,7 +76,7 @@ describe("SignupPage", () => {
     const queryClient = createTestQueryClient();
 
     // Make post mock hang so we can test the pending state
-    let resolvePost: any;
+    let resolvePost!: (value: unknown) => void;
     const promise = new Promise((resolve) => {
       resolvePost = resolve;
     });

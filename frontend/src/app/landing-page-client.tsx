@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Fraunces, Inter } from "next/font/google";
 import ScoreCard from "./components/ScoreCard";
 import FeatureCard from "./components/FeatureCard";
@@ -27,7 +28,10 @@ export default function LandingPageClient() {
 
   // Soft entrance trigger on mount for Hero
   useEffect(() => {
-    setIsHeroLoaded(true);
+    const handle = requestAnimationFrame(() => {
+      setIsHeroLoaded(true);
+    });
+    return () => cancelAnimationFrame(handle);
   }, []);
 
   // Slide-up trigger on scroll for Feature Cards
@@ -115,12 +119,12 @@ export default function LandingPageClient() {
     >
       {/* 1. Navigation Bar */}
       <nav className="w-full max-w-7xl mx-auto px-6 py-6 flex justify-between items-center border-b border-brand-border/40">
-        <a
+        <Link
           href="/"
           className={`text-xl font-bold tracking-tight ${fraunces.className}`}
         >
           ResumeRank
-        </a>
+        </Link>
 
         <div className="hidden md:flex gap-8 text-sm text-brand-text-secondary">
           <a

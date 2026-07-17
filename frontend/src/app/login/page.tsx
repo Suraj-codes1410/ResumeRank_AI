@@ -45,7 +45,10 @@ export default function LoginPage() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.get("registered") === "true") {
-        setRegistered(true);
+        const handle = requestAnimationFrame(() => {
+          setRegistered(true);
+        });
+        return () => cancelAnimationFrame(handle);
       }
     }
   }, []);

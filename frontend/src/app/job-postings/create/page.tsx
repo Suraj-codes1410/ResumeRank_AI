@@ -41,7 +41,7 @@ export default function CreateJobPostingPage() {
     watch,
     setError,
     formState: { errors },
-  } = useForm<any>({
+  } = useForm<JobPostingFormData>({
     resolver: zodResolver(jobPostingFormSchema),
     defaultValues: {
       title: "",
@@ -67,9 +67,9 @@ export default function CreateJobPostingPage() {
     },
     onSuccess: (newPosting) => {
       // Optimistically inject the new posting into cache to show up immediately
-      queryClient.setQueriesData(
+      queryClient.setQueriesData<{ items: unknown[]; totalItems: number }>(
         { queryKey: ["jobPostings"] },
-        (oldData: any) => {
+        (oldData) => {
           if (!oldData) return oldData;
           return {
             ...oldData,
@@ -80,8 +80,8 @@ export default function CreateJobPostingPage() {
       );
       router.push("/job-postings");
     },
-    onError: (error: any) => {
-      const detail = error.response?.data?.detail;
+    onError: (error: unknown) => {
+      const detail = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail;
       if (typeof detail === "string") {
         const fieldErrors = detail.split(", ");
         fieldErrors.forEach((errStr) => {

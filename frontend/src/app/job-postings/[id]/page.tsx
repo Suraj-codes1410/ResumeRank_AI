@@ -79,11 +79,11 @@ const runWithConcurrency = async (
   tasks: (() => Promise<void>)[],
   limit: number = 3,
 ) => {
-  const executing: Promise<any>[] = [];
+  const executing: Promise<unknown>[] = [];
   for (const task of tasks) {
     const p = Promise.resolve().then(() => task());
     if (limit <= tasks.length) {
-      const e: Promise<any> = p.then(() =>
+      const e: Promise<unknown> = p.then(() =>
         executing.splice(executing.indexOf(e), 1),
       );
       executing.push(e);
@@ -116,7 +116,7 @@ export default function JobPostingDetailPage({
 
   useEffect(() => {
     if (!showArchiveConfirm) return;
-    const handleKeyDown = (e: any) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setShowArchiveConfirm(false);
         return;
@@ -295,7 +295,7 @@ export default function JobPostingDetailPage({
     reset,
     setError,
     formState: { errors },
-  } = useForm<any>({
+  } = useForm<JobPostingFormData>({
     resolver: zodResolver(jobPostingFormSchema),
     defaultValues: {
       title: "",
@@ -337,12 +337,12 @@ export default function JobPostingDetailPage({
       queryClient.setQueryData(["jobPosting", id, accessToken], updatedData);
       queryClient.setQueriesData(
         { queryKey: ["jobPostings"] },
-        (oldData: any) => {
+        (oldData: { items: { id: string }[] } | undefined) => {
           if (!oldData) return oldData;
           return {
             ...oldData,
-            items: oldData.items.map((item: any) =>
-              item.id === id ? updatedData : item,
+            items: oldData.items.map((item) =>
+              item.id === id ? (updatedData as { id: string }) : item,
             ),
           };
         },
@@ -351,8 +351,9 @@ export default function JobPostingDetailPage({
       setShowToast(true);
       setTimeout(() => setShowToast(false), 4000);
     },
-    onError: (err: any) => {
-      const detail = err.response?.data?.detail;
+    onError: (err: unknown) => {
+      const errorDetail = err as { response?: { data?: { detail?: string } } };
+      const detail = errorDetail.response?.data?.detail;
       if (typeof detail === "string") {
         const fieldErrors = detail.split(", ");
         fieldErrors.forEach((errStr) => {
@@ -456,9 +457,10 @@ export default function JobPostingDetailPage({
 
       setActiveCandidateIds((prev) => [...prev, candidateData.id]);
       refetchCandidates();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorDetail = err as { response?: { data?: { detail?: string } }; message?: string };
       const errMsg =
-        err.response?.data?.detail || err.message || "Upload failed";
+        errorDetail.response?.data?.detail || errorDetail.message || "Upload failed";
       setBatchFiles((prev) =>
         prev.map((f) =>
           f.id === fileObj.id
@@ -552,7 +554,7 @@ export default function JobPostingDetailPage({
 
               return {
                 ...file,
-                status: status.toLowerCase() as any,
+                status: status.toLowerCase() as BatchFile["status"],
                 error:
                   status === "FAILED"
                     ? match.parseError || "Parsing failed"
@@ -590,9 +592,10 @@ export default function JobPostingDetailPage({
       setShowToast(true);
       setTimeout(() => setShowToast(false), 4000);
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
+      const errorDetail = err as { response?: { data?: { detail?: string } }; message?: string };
       setToastMessage(
-        err.response?.data?.detail || err.message || "Retry failed",
+        errorDetail.response?.data?.detail || errorDetail.message || "Retry failed",
       );
       setShowToast(true);
       setTimeout(() => setShowToast(false), 4000);
@@ -616,7 +619,7 @@ export default function JobPostingDetailPage({
       );
       return response.data;
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: { updated?: unknown[]; skipped?: unknown[] }) => {
       setSelectedCandidateIds([]);
       refetchCandidates();
       const updatedCount = data.updated?.length || 0;
@@ -773,7 +776,7 @@ export default function JobPostingDetailPage({
     }
   };
 
-  const is404 = (error as any)?.response?.status === 404;
+  const is404 = (error as { response?: { status?: number } })?.response?.status === 404;
 
   return (
     <ProtectedRoute>
@@ -1141,7 +1144,7 @@ export default function JobPostingDetailPage({
                       Upload Resume
                     </h3>
                     <p className="text-xs text-brand-text-secondary leading-relaxed">
-                      Select a candidate's resume (PDF or DOCX format) to
+                      Select a candidate&apos;s resume (PDF or DOCX format) to
                       generate signature, upload to Cloudinary, and kickstart AI
                       evaluation.
                     </p>

@@ -252,7 +252,7 @@ export default function JobPostingsPage() {
                   Your Recruiting Space
                 </h3>
                 <p className="text-sm text-brand-text-secondary max-w-md mx-auto">
-                  You haven't posted any job openings yet. Start by creating
+                  You haven&apos;t posted any job openings yet. Start by creating
                   your first post to screen candidates.
                 </p>
               </div>

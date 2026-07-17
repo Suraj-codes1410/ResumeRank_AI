@@ -51,7 +51,7 @@ vi.mock("@/lib/api-client", () => ({
 
 // Mock Axios directly for Cloudinary direct POST calls
 vi.mock("axios", async (importOriginal) => {
-  const actual: any = await importOriginal();
+  const actual = (await importOriginal()) as Record<string, unknown>;
   return {
     ...actual,
     default: {
@@ -74,6 +74,16 @@ const createTestQueryClient = () =>
     },
   });
 
+const createMockParams = (id: string): Promise<{ id: string }> => {
+  return {
+    then: (onFulfill: (value: { id: string }) => void) => {
+      onFulfill({ id });
+    },
+    status: "fulfilled",
+    value: { id },
+  } as unknown as Promise<{ id: string }>;
+};
+
 describe("JobPostingDetailPage Edit & Upload Tests", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -83,15 +93,9 @@ describe("JobPostingDetailPage Edit & Upload Tests", () => {
   });
 
   it("a 404 API response renders the not-found state", async () => {
-    const mockParams = {
-      then: (onFulfill: any) => {
-        onFulfill({ id: "posting-123" });
-      },
-      status: "fulfilled",
-      value: { id: "posting-123" },
-    } as any;
+    const mockParams = createMockParams("posting-123");
     // Mock GET call to throw 404
-    const mockError: any = new Error("Not found");
+    const mockError = new Error("Not found") as Error & { response?: { status: number } };
     mockError.response = { status: 404 };
     vi.mocked(apiClient.get).mockRejectedValue(mockError);
 
@@ -115,13 +119,7 @@ describe("JobPostingDetailPage Edit & Upload Tests", () => {
   });
 
   it("editing the title and saving calls the PATCH mutation with correct payload", async () => {
-    const mockParams = {
-      then: (onFulfill: any) => {
-        onFulfill({ id: "posting-123" });
-      },
-      status: "fulfilled",
-      value: { id: "posting-123" },
-    } as any;
+    const mockParams = createMockParams("posting-123");
     // Mock GET call to return existing job posting details and empty candidates
     vi.mocked(apiClient.get).mockImplementation(async (url) => {
       if (url.includes("/candidates")) {
@@ -206,13 +204,7 @@ describe("JobPostingDetailPage Edit & Upload Tests", () => {
   });
 
   it("uploading a file transitions UI states and polls correctly until scored", async () => {
-    const mockParams = {
-      then: (onFulfill: any) => {
-        onFulfill({ id: "posting-123" });
-      },
-      status: "fulfilled",
-      value: { id: "posting-123" },
-    } as any;
+    const mockParams = createMockParams("posting-123");
 
     // 1. Mock GET calls
     vi.mocked(apiClient.get).mockImplementation(async (url) => {
@@ -377,13 +369,7 @@ describe("JobPostingDetailPage Edit & Upload Tests", () => {
   });
 
   it("selecting 3 valid files shows 3 independent progress rows", async () => {
-    const mockParams = {
-      then: (onFulfill: any) => {
-        onFulfill({ id: "posting-123" });
-      },
-      status: "fulfilled",
-      value: { id: "posting-123" },
-    } as any;
+    const mockParams = createMockParams("posting-123");
 
     vi.mocked(apiClient.get).mockImplementation(async (url) => {
       if (url.includes("/candidates")) {
@@ -451,13 +437,7 @@ describe("JobPostingDetailPage Edit & Upload Tests", () => {
   });
 
   it("one invalid file (wrong type) among 3 selected shows an error for just that one while the other 2 proceed", async () => {
-    const mockParams = {
-      then: (onFulfill: any) => {
-        onFulfill({ id: "posting-123" });
-      },
-      status: "fulfilled",
-      value: { id: "posting-123" },
-    } as any;
+    const mockParams = createMockParams("posting-123");
 
     vi.mocked(apiClient.get).mockImplementation(async (url) => {
       if (url.includes("/candidates")) {
@@ -514,15 +494,9 @@ describe("JobPostingDetailPage Edit & Upload Tests", () => {
   });
 
   it("polling correctly tracks multiple candidate IDs simultaneously and stops once ALL of them reach a terminal status, not just the first one", async () => {
-    const mockParams = {
-      then: (onFulfill: any) => {
-        onFulfill({ id: "posting-123" });
-      },
-      status: "fulfilled",
-      value: { id: "posting-123" },
-    } as any;
+    const mockParams = createMockParams("posting-123");
 
-    let candidatesList: any[] = [];
+    let candidatesList: Record<string, unknown>[] = [];
 
     vi.mocked(apiClient.get).mockImplementation(async (url) => {
       if (url.includes("/candidates")) {
@@ -654,13 +628,7 @@ describe("JobPostingDetailPage Edit & Upload Tests", () => {
   });
 
   it("applying a minScore filter updates the URL query string", async () => {
-    const mockParams = {
-      then: (onFulfill: any) => {
-        onFulfill({ id: "posting-123" });
-      },
-      status: "fulfilled",
-      value: { id: "posting-123" },
-    } as any;
+    const mockParams = createMockParams("posting-123");
 
     vi.mocked(apiClient.get).mockImplementation(async (url) => {
       if (url.includes("/candidates")) {
@@ -701,13 +669,7 @@ describe("JobPostingDetailPage Edit & Upload Tests", () => {
   });
 
   it("renders correct empty states for zero candidates total vs zero candidates matching filters", async () => {
-    const mockParams = {
-      then: (onFulfill: any) => {
-        onFulfill({ id: "posting-123" });
-      },
-      status: "fulfilled",
-      value: { id: "posting-123" },
-    } as any;
+    const mockParams = createMockParams("posting-123");
 
     vi.mocked(apiClient.get).mockImplementation(async (url) => {
       if (url.includes("/candidates")) {
@@ -768,13 +730,7 @@ describe("JobPostingDetailPage Edit & Upload Tests", () => {
   });
 
   it("selecting 2 candidates and choosing SHORTLISTED calls the bulk endpoint immediately without confirm", async () => {
-    const mockParams = {
-      then: (onFulfill: any) => {
-        onFulfill({ id: "posting-123" });
-      },
-      status: "fulfilled",
-      value: { id: "posting-123" },
-    } as any;
+    const mockParams = createMockParams("posting-123");
 
     const mockCandidates = [
       {
@@ -851,13 +807,7 @@ describe("JobPostingDetailPage Edit & Upload Tests", () => {
   });
 
   it("selecting candidates and choosing REJECTED shows a confirm dialog before calling the endpoint", async () => {
-    const mockParams = {
-      then: (onFulfill: any) => {
-        onFulfill({ id: "posting-123" });
-      },
-      status: "fulfilled",
-      value: { id: "posting-123" },
-    } as any;
+    const mockParams = createMockParams("posting-123");
 
     const mockCandidates = [
       {
@@ -923,13 +873,7 @@ describe("JobPostingDetailPage Edit & Upload Tests", () => {
   });
 
   it("the export button includes the currently active filter query params in its request URL", async () => {
-    const mockParams = {
-      then: (onFulfill: any) => {
-        onFulfill({ id: "posting-123" });
-      },
-      status: "fulfilled",
-      value: { id: "posting-123" },
-    } as any;
+    const mockParams = createMockParams("posting-123");
 
     const mockCandidates = [
       {
@@ -1002,13 +946,7 @@ describe("JobPostingDetailPage Edit & Upload Tests", () => {
   });
 
   it("supports full keyboard Tab/Space/Enter flow for candidate selection and bulk status rejection", async () => {
-    const mockParams = {
-      then: (onFulfill: any) => {
-        onFulfill({ id: "posting-123" });
-      },
-      status: "fulfilled",
-      value: { id: "posting-123" },
-    } as any;
+    const mockParams = createMockParams("posting-123");
 
     const mockCandidates = [
       {

@@ -31,11 +31,12 @@ export async function uploadResumeToCloudinary(file: File): Promise<string> {
     const response =
       await apiClient.post<SignatureResponse>("/uploads/signature");
     signatureData = response.data;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { message?: string; detail?: string } }; message?: string };
     const errorMessage =
-      error.response?.data?.message ||
-      error.response?.data?.detail ||
-      error.message ||
+      err.response?.data?.message ||
+      err.response?.data?.detail ||
+      err.message ||
       "Failed to get upload signature";
     throw new Error(`Authentication signature failed: ${errorMessage}`);
   }
@@ -64,10 +65,11 @@ export async function uploadResumeToCloudinary(file: File): Promise<string> {
     } else {
       throw new Error("Cloudinary response did not contain secure_url");
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
     const errorMessage =
-      error.response?.data?.error?.message ||
-      error.message ||
+      err.response?.data?.error?.message ||
+      err.message ||
       "Failed to upload file to Cloudinary";
     throw new Error(`Cloudinary upload failed: ${errorMessage}`);
   }
