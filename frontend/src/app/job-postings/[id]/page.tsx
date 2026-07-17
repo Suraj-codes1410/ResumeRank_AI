@@ -16,7 +16,11 @@ import axios from "axios";
 import { useAuth } from "@/context/auth-context";
 import { apiClient } from "@/lib/api-client";
 import ProtectedRoute from "../../components/protected-route";
-import { jobPostingFormSchema, JobPostingFormData } from "../schema";
+import {
+  jobPostingFormSchema,
+  JobPostingFormData,
+  JobPostingFormInput,
+} from "../schema";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -116,7 +120,7 @@ export default function JobPostingDetailPage({
 
   useEffect(() => {
     if (!showArchiveConfirm) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: globalThis.KeyboardEvent) => {
       if (e.key === "Escape") {
         setShowArchiveConfirm(false);
         return;
@@ -295,7 +299,7 @@ export default function JobPostingDetailPage({
     reset,
     setError,
     formState: { errors },
-  } = useForm<JobPostingFormData>({
+  } = useForm<JobPostingFormInput>({
     resolver: zodResolver(jobPostingFormSchema),
     defaultValues: {
       title: "",
@@ -695,8 +699,8 @@ export default function JobPostingDetailPage({
     }
   };
 
-  const onSubmit = (formData: JobPostingFormData) => {
-    updateMutation.mutate(formData);
+  const onSubmit = (formData: JobPostingFormInput) => {
+    updateMutation.mutate(formData as JobPostingFormData);
   };
 
   const handleAddSkill = (

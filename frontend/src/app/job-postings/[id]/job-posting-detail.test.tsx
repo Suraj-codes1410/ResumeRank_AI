@@ -51,11 +51,13 @@ vi.mock("@/lib/api-client", () => ({
 
 // Mock Axios directly for Cloudinary direct POST calls
 vi.mock("axios", async (importOriginal) => {
-  const actual = (await importOriginal()) as Record<string, unknown>;
+  const actual = (await importOriginal()) as {
+    default: Record<string, unknown>;
+  };
   return {
     ...actual,
     default: {
-      ...actual.default,
+      ...(actual.default as Record<string, unknown>),
       post: vi.fn(),
       create: vi.fn(() => ({
         get: vi.fn(),

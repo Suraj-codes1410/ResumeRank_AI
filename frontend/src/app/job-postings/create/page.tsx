@@ -5,7 +5,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { jobPostingFormSchema, JobPostingFormData } from "../schema";
+import {
+  jobPostingFormSchema,
+  JobPostingFormData,
+  JobPostingFormInput,
+} from "../schema";
 import { Fraunces, Inter } from "next/font/google";
 import { useAuth } from "@/context/auth-context";
 import { apiClient } from "@/lib/api-client";
@@ -41,7 +45,7 @@ export default function CreateJobPostingPage() {
     watch,
     setError,
     formState: { errors },
-  } = useForm<JobPostingFormData>({
+  } = useForm<JobPostingFormInput>({
     resolver: zodResolver(jobPostingFormSchema),
     defaultValues: {
       title: "",
@@ -108,8 +112,8 @@ export default function CreateJobPostingPage() {
     },
   });
 
-  const onSubmit = (data: JobPostingFormData) => {
-    createMutation.mutate(data);
+  const onSubmit = (data: JobPostingFormInput) => {
+    createMutation.mutate(data as JobPostingFormData);
   };
 
   const handleAddSkill = (
@@ -182,6 +186,8 @@ export default function CreateJobPostingPage() {
                 {errors.root.message?.toString()}
               </div>
             )}
+
+
 
             {/* Title */}
             <div className="flex flex-col gap-2">

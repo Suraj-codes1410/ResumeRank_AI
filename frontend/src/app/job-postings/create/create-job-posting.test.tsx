@@ -112,11 +112,19 @@ describe("CreateJobPostingPage Form Tests", () => {
       screen.getByRole("button", { name: /Publish Job Posting/i }),
     );
 
-    // Confirm navigation to /job-postings list page occurs
+    // Confirm API call occurs with the correct payload
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/job-postings");
+      expect(apiClient.post).toHaveBeenCalledWith(
+        "/job-postings",
+        expect.objectContaining({
+          title: "Python Engineer",
+          description: "Building REST endpoints",
+        }),
+        expect.any(Object)
+      );
     });
 
-    expect(apiClient.post).toHaveBeenCalledTimes(1);
+    // Confirm navigation to /job-postings list page occurs
+    expect(mockPush).toHaveBeenCalledWith("/job-postings");
   });
 });

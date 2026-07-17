@@ -13,11 +13,17 @@ export const jobPostingFormSchema = z.object({
     .max(10000, "Description must not exceed 10000 characters"),
   requiredSkills: z.array(z.string()),
   niceToHaveSkills: z.array(z.string()),
-  minYearsExperience: z.any().transform((val) => {
+  minYearsExperience: z.preprocess((val) => {
     if (val === null || val === undefined || val === "") return null;
-    const num = Number(val);
-    return isNaN(num) ? null : num;
-  }),
+    if (typeof val === "number" && isNaN(val)) return null;
+    if (typeof val === "string") {
+      const trimmed = val.trim();
+      if (trimmed === "") return null;
+      const num = Number(trimmed);
+      return isNaN(num) ? null : num;
+    }
+    return val;
+  }, z.number().nullable()),
   seniorityLevel: z
     .enum(["JUNIOR", "MID", "SENIOR", "LEAD"])
     .nullable()
@@ -26,3 +32,4 @@ export const jobPostingFormSchema = z.object({
 });
 
 export type JobPostingFormData = z.infer<typeof jobPostingFormSchema>;
+export type JobPostingFormInput = z.input<typeof jobPostingFormSchema>;
