@@ -1,0 +1,174 @@
+# =============================================================================
+# Frontend CI Pipeline - Next.js 15 + TypeScript
+# =============================================================================
+# Triggers only when frontend/** files change.
+# Runs type checking, linting, formatting, tests, and production build.
+# =============================================================================
+
+name: Frontend CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-ci.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-ci.yml'
+
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  WORKING_DIR: frontend
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1: Lint & Format
+  # ---------------------------------------------------------------------------
+  lint-and-format:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type check
+        run: npx tsc --noEmit
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Prettier check
+        run: npx prettier --check "src/**/*.{ts,tsx,css,json,md}"
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Unit Tests
+  # ---------------------------------------------------------------------------
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [lint-and-format]
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Vitest
+        run: npx vitest run --coverage --reporter=verbose
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Production Build
+  # ---------------------------------------------------------------------------
+  build:
+    name: Production Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [test]
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js production app
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/.next/
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Job 4: Repository Standards
+  # ---------------------------------------------------------------------------
+  repo-standards:
+    name: Repository Standards
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check no .env files committed
+        run: |
+          if find . -name '.env' -not -path './.env.example' -not -path './.env.local.example' | grep -q .; then
+            echo "::error::Found .env files committed to repository"
+            find . -name '.env' -not -path './.env.example' -not -path './.env.local.example'
+            exit 1
+          fi
+          echo "✅ No .env files found"
+
+      - name: Check no console.log in production code
+        run: |
+          if grep -rn 'console\.log' src/ --include='*.ts' --include='*.tsx' \
+             | grep -v '.test.' | grep -v '__tests__' | grep -v 'node_modules'; then
+            echo "::error::Found console.log statements in production frontend code"
+            exit 1
+          fi
+          echo "✅ No console.log in production code"
+
+      - name: Check no TODO/FIXME in production code
+        run: |
+          FOUND=$(grep -rn 'TODO\|FIXME' src/ --include='*.ts' --include='*.tsx' \
+            | grep -v '.test.' | grep -v '__tests__' | grep -v 'node_modules' || true)
+          if [ -n "$FOUND" ]; then
+            echo "::warning::Found TODO/FIXME comments:"
+            echo "$FOUND"
+          fi

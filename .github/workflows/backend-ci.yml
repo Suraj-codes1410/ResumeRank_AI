@@ -1,0 +1,210 @@
+# =============================================================================
+# Backend CI Pipeline - Spring Boot 3.x + Java 21
+# =============================================================================
+# Triggers only when backend/** files change.
+# Runs compilation, static analysis, tests, coverage, and JAR packaging.
+# =============================================================================
+
+name: Backend CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: '21'
+  WORKING_DIR: backend
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1: Compile & Static Analysis
+  # ---------------------------------------------------------------------------
+  compile-and-lint:
+    name: Compile & Static Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: 'maven'
+
+      - name: Compile project
+        run: mvn compile -B -q
+
+      - name: Spotless check
+        run: mvn spotless:check -B
+        continue-on-error: true
+
+      - name: Checkstyle
+        run: mvn checkstyle:check -B
+        continue-on-error: true
+
+      - name: PMD analysis
+        run: mvn pmd:check -B
+        continue-on-error: true
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Unit Tests
+  # ---------------------------------------------------------------------------
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [compile-and-lint]
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: 'maven'
+
+      - name: Run unit tests
+        run: mvn test -B -Dspring.profiles.active=test
+        env:
+          SPRING_PROFILES_ACTIVE: test
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-unit-test-results
+          path: backend/target/surefire-reports/
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Integration Tests
+  # ---------------------------------------------------------------------------
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [unit-tests]
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: 'maven'
+
+      - name: Run integration tests
+        run: mvn verify -B -Dspring.profiles.active=test
+        env:
+          SPRING_PROFILES_ACTIVE: test
+
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-integration-test-results
+          path: backend/target/failsafe-reports/
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Job 4: Coverage & Build
+  # ---------------------------------------------------------------------------
+  coverage-and-build:
+    name: Coverage & Build JAR
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [integration-tests]
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: 'maven'
+
+      - name: Generate JaCoCo coverage report
+        run: mvn verify jacoco:report -B -Dspring.profiles.active=test
+        env:
+          SPRING_PROFILES_ACTIVE: test
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/target/site/jacoco/
+          retention-days: 7
+
+      - name: Build executable JAR
+        run: mvn package -B -DskipTests
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar
+          path: backend/target/*.jar
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Job 5: Repository Standards
+  # ---------------------------------------------------------------------------
+  repo-standards:
+    name: Repository Standards
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check no .env files committed
+        run: |
+          if find . -name '.env' -not -name '.env.example' | grep -q .; then
+            echo "::error::Found .env files committed to repository"
+            find . -name '.env' -not -name '.env.example'
+            exit 1
+          fi
+          echo "✅ No .env files found"
+
+      - name: Check no TODO/FIXME in production code
+        run: |
+          FOUND=$(grep -rn 'TODO\|FIXME' src/main/ --include='*.java' || true)
+          if [ -n "$FOUND" ]; then
+            echo "::warning::Found TODO/FIXME comments:"
+            echo "$FOUND"
+          fi

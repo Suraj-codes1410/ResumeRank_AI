@@ -1,0 +1,171 @@
+# =============================================================================
+# Release Pipeline - Build, Package & Publish GitHub Release
+# =============================================================================
+# Triggers only on Git tags (e.g., v1.0.0).
+# Builds all services, generates checksums, and creates a GitHub Release.
+# Does NOT deploy automatically.
+# =============================================================================
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '22'
+  JAVA_VERSION: '21'
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1: Build Frontend
+  # ---------------------------------------------------------------------------
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install & Build
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Package frontend
+        run: tar -czf frontend-build-${{ github.ref_name }}.tar.gz -C frontend .next public
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-release
+          path: frontend-build-${{ github.ref_name }}.tar.gz
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Build Backend
+  # ---------------------------------------------------------------------------
+  build-backend:
+    name: Build Backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: 'maven'
+
+      - name: Build JAR
+        working-directory: backend
+        run: mvn package -B -DskipTests
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-release
+          path: backend/target/*.jar
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Package AI Service
+  # ---------------------------------------------------------------------------
+  build-ai-service:
+    name: Package AI Service
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Package AI service
+        run: tar -czf ai-service-${{ github.ref_name }}.tar.gz -C aiservice .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-service-release
+          path: ai-service-${{ github.ref_name }}.tar.gz
+
+  # ---------------------------------------------------------------------------
+  # Job 4: Create GitHub Release
+  # ---------------------------------------------------------------------------
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [build-frontend, build-backend, build-ai-service]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Flatten artifacts
+        run: |
+          mkdir -p final-artifacts
+          find release-artifacts -type f \( -name '*.tar.gz' -o -name '*.jar' \) -exec cp {} final-artifacts/ \;
+          ls -la final-artifacts/
+
+      - name: Generate checksums
+        run: |
+          cd final-artifacts
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Generate release notes
+        id: release-notes
+        run: |
+          PREV_TAG=$(git tag --sort=-version:refname | head -n 2 | tail -n 1)
+          if [ -z "$PREV_TAG" ]; then
+            PREV_TAG=$(git rev-list --max-parents=0 HEAD)
+          fi
+          echo "## What's Changed" > RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          git log ${PREV_TAG}..HEAD --pretty=format:"- %s (%h)" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "## Artifacts" >> RELEASE_NOTES.md
+          echo "| File | SHA256 |" >> RELEASE_NOTES.md
+          echo "|------|--------|" >> RELEASE_NOTES.md
+          while IFS= read -r line; do
+            HASH=$(echo "$line" | awk '{print $1}')
+            FILE=$(echo "$line" | awk '{print $2}')
+            echo "| $FILE | \`${HASH:0:16}...\` |" >> RELEASE_NOTES.md
+          done < final-artifacts/SHA256SUMS.txt
+          cat RELEASE_NOTES.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: RELEASE_NOTES.md
+          files: |
+            final-artifacts/*
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'rc') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') }}
+          generate_release_notes: true

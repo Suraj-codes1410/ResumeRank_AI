@@ -341,4 +341,105 @@ class CandidateServiceTest {
                 .anyMatch(c -> c.getId().equals(candidateFailId) && c.getResumeStatus() == ResumeStatus.FAILED);
         Assertions.assertTrue(foundFailed);
     }
+
+    @Test
+    void handleAiWebhook_FailedWebhookPayload_TransitionsToFailed() {
+        UUID candidateId = UUID.randomUUID();
+        Candidate candidate = new Candidate();
+        candidate.setId(candidateId);
+        candidate.setResumeStatus(ResumeStatus.PENDING);
+
+        Mockito.when(candidateRepository.findById(candidateId)).thenReturn(Optional.of(candidate));
+
+        AiWebhookPayload payload = new AiWebhookPayload();
+        payload.setCandidateId(candidateId.toString());
+        payload.setSuccess(false); // Indicates AI service failure
+        payload.setError("FastAPI: Out of memory during processing");
+
+        candidateService.handleAiWebhook(payload);
+
+        // Verify status transitions to FAILED
+        Mockito.verify(candidateRepository).saveAndFlush(candidate);
+        Assertions.assertEquals(ResumeStatus.FAILED, candidate.getResumeStatus());
+        Assertions.assertEquals("FastAPI: Out of memory during processing", candidate.getParseError());
+    }
+
+    @Test
+    void handleAiWebhook_MissingScorePayload_TransitionsToFailed() {
+        UUID candidateId = UUID.randomUUID();
+        Candidate candidate = new Candidate();
+        candidate.setId(candidateId);
+        candidate.setResumeStatus(ResumeStatus.PENDING);
+
+        Mockito.when(candidateRepository.findById(candidateId)).thenReturn(Optional.of(candidate));
+
+        AiWebhookPayload payload = new AiWebhookPayload();
+        payload.setCandidateId(candidateId.toString());
+        payload.setSuccess(true);
+        payload.setScore(null); // Missing score payload!
+
+        candidateService.handleAiWebhook(payload);
+
+        // Verify status transitions to FAILED
+        Mockito.verify(candidateRepository).saveAndFlush(candidate);
+        Assertions.assertEquals(ResumeStatus.FAILED, candidate.getResumeStatus());
+        Assertions.assertEquals("Validation failed for score payload", candidate.getParseError());
+    }
+
+    @Test
+    void processCandidateResume_RetrySuccess_TransitionsToPending() {
+        UUID candidateId = UUID.randomUUID();
+        Candidate candidate = new Candidate();
+        candidate.setId(candidateId);
+        candidate.setJobPosting(jobPosting);
+        candidate.setResumeFileUrl("http://cloudinary.com/resume.pdf");
+        candidate.setResumeStatus(ResumeStatus.PENDING);
+
+        Mockito.when(candidateRepository.findByIdWithJobPosting(candidateId)).thenReturn(Optional.of(candidate));
+
+        // Mock restTemplate: fail first attempt, succeed second attempt
+        Mockito.when(restTemplate.postForEntity(any(String.class), any(), eq(String.class)))
+                .thenThrow(new RestClientException("Attempt 1 Timeout"))
+                .thenReturn(new org.springframework.http.ResponseEntity<>("OK", org.springframework.http.HttpStatus.OK));
+
+        candidateService.processCandidateResumeAsync(candidateId);
+
+        // Verify called exactly twice
+        Mockito.verify(restTemplate, Mockito.times(2))
+                .postForEntity(any(String.class), any(), eq(String.class));
+
+        // Verify status remains PENDING and did not transition to FAILED
+        Assertions.assertEquals(ResumeStatus.PENDING, candidate.getResumeStatus());
+        Assertions.assertNull(candidate.getParseError());
+    }
+
+    @Test
+    void processCandidateResume_TimeoutOrResourceAccessExceptionTriggersRetry() {
+        UUID candidateId = UUID.randomUUID();
+        Candidate candidate = new Candidate();
+        candidate.setId(candidateId);
+        candidate.setJobPosting(jobPosting);
+        candidate.setResumeFileUrl("http://cloudinary.com/resume.pdf");
+        candidate.setResumeStatus(ResumeStatus.PENDING);
+
+        Mockito.when(candidateRepository.findByIdWithJobPosting(candidateId)).thenReturn(Optional.of(candidate));
+
+        // Mock restTemplate: throw resource access exceptions (timeouts)
+        Mockito.when(restTemplate.postForEntity(any(String.class), any(), eq(String.class)))
+                .thenThrow(new org.springframework.web.client.ResourceAccessException("Read timed out"));
+
+        candidateService.processCandidateResumeAsync(candidateId);
+
+        // Verify called exactly 3 times (1 initial + 2 retries)
+        Mockito.verify(restTemplate, Mockito.times(3))
+                .postForEntity(any(String.class), any(), eq(String.class));
+
+        // Verify status transitions to FAILED
+        ArgumentCaptor<Candidate> candidateCaptor = ArgumentCaptor.forClass(Candidate.class);
+        Mockito.verify(candidateRepository, Mockito.atLeastOnce()).save(candidateCaptor.capture());
+        
+        Candidate finalCandidateState = candidateCaptor.getValue();
+        Assertions.assertEquals(ResumeStatus.FAILED, finalCandidateState.getResumeStatus());
+        Assertions.assertEquals("AI service unavailable, please retry", finalCandidateState.getParseError());
+    }
 }

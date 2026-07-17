@@ -197,6 +197,68 @@ class JobPostingServiceTest {
         Mockito.verify(jobPostingRepository, Mockito.never()).save(any());
     }
 
+    @Test
+    void createJobPosting_Success_SavesToRepository() {
+        com.resumerank.backend.dto.JobPostingCreateRequest request = new com.resumerank.backend.dto.JobPostingCreateRequest(
+                "Software Engineer", "Description", new String[]{"Java"}, new String[]{"Docker"}, 5, SeniorityLevel.SENIOR
+        );
+
+        Mockito.when(userRepository.findById(recruiterAId)).thenReturn(java.util.Optional.of(recruiterA));
+        Mockito.when(jobPostingRepository.save(any(JobPosting.class))).thenAnswer(invocation -> {
+            JobPosting p = invocation.getArgument(0);
+            p.setId(UUID.randomUUID());
+            return p;
+        });
+
+        var response = jobPostingService.createJobPosting(recruiterAId, request);
+
+        Assertions.assertNotNull(response.id());
+        Assertions.assertEquals("Software Engineer", response.title());
+        Assertions.assertEquals(recruiterAId, response.userId());
+        Mockito.verify(jobPostingRepository, Mockito.times(1)).save(any(JobPosting.class));
+    }
+
+    @Test
+    void createJobPosting_UserNotFound_ThrowsResourceNotFoundException() {
+        com.resumerank.backend.dto.JobPostingCreateRequest request = new com.resumerank.backend.dto.JobPostingCreateRequest(
+                "Software Engineer", "Description", new String[0], new String[0], null, null
+        );
+
+        Mockito.when(userRepository.findById(recruiterAId)).thenReturn(java.util.Optional.empty());
+
+        Assertions.assertThrows(
+                com.resumerank.backend.exception.ResourceNotFoundException.class,
+                () -> jobPostingService.createJobPosting(recruiterAId, request)
+        );
+        Mockito.verify(jobPostingRepository, Mockito.never()).save(any());
+    }
+
+    @Test
+    void getJobPosting_NonexistentJob_ThrowsResourceNotFoundException() {
+        UUID postingId = UUID.randomUUID();
+        Mockito.when(jobPostingRepository.findById(postingId)).thenReturn(java.util.Optional.empty());
+
+        Assertions.assertThrows(
+                com.resumerank.backend.exception.ResourceNotFoundException.class,
+                () -> jobPostingService.getJobPosting(recruiterAId, postingId)
+        );
+    }
+
+    @Test
+    void updateJobPosting_NonexistentJob_ThrowsResourceNotFoundException() throws Exception {
+        UUID postingId = UUID.randomUUID();
+        Mockito.when(jobPostingRepository.findById(postingId)).thenReturn(java.util.Optional.empty());
+
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        com.fasterxml.jackson.databind.JsonNode patchNode = mapper.readTree("{\"title\":\"Lead Developer\"}");
+
+        Assertions.assertThrows(
+                com.resumerank.backend.exception.ResourceNotFoundException.class,
+                () -> jobPostingService.updateJobPosting(recruiterAId, postingId, patchNode)
+        );
+        Mockito.verify(jobPostingRepository, Mockito.never()).saveAndFlush(any());
+    }
+
     private JobPosting createMockPosting(UUID id, User user, String title, JobPostingStatus status) {
         JobPosting post = new JobPosting();
         post.setId(id);
