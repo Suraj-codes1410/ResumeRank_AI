@@ -95,7 +95,9 @@ describe("JobPostingDetailPage Edit & Upload Tests", () => {
   it("a 404 API response renders the not-found state", async () => {
     const mockParams = createMockParams("posting-123");
     // Mock GET call to throw 404
-    const mockError = new Error("Not found") as Error & { response?: { status: number } };
+    const mockError = new Error("Not found") as Error & {
+      response?: { status: number };
+    };
     mockError.response = { status: 404 };
     vi.mocked(apiClient.get).mockRejectedValue(mockError);
 

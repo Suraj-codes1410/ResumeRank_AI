@@ -458,9 +458,14 @@ export default function JobPostingDetailPage({
       setActiveCandidateIds((prev) => [...prev, candidateData.id]);
       refetchCandidates();
     } catch (err: unknown) {
-      const errorDetail = err as { response?: { data?: { detail?: string } }; message?: string };
+      const errorDetail = err as {
+        response?: { data?: { detail?: string } };
+        message?: string;
+      };
       const errMsg =
-        errorDetail.response?.data?.detail || errorDetail.message || "Upload failed";
+        errorDetail.response?.data?.detail ||
+        errorDetail.message ||
+        "Upload failed";
       setBatchFiles((prev) =>
         prev.map((f) =>
           f.id === fileObj.id
@@ -593,9 +598,14 @@ export default function JobPostingDetailPage({
       setTimeout(() => setShowToast(false), 4000);
     },
     onError: (err: unknown) => {
-      const errorDetail = err as { response?: { data?: { detail?: string } }; message?: string };
+      const errorDetail = err as {
+        response?: { data?: { detail?: string } };
+        message?: string;
+      };
       setToastMessage(
-        errorDetail.response?.data?.detail || errorDetail.message || "Retry failed",
+        errorDetail.response?.data?.detail ||
+          errorDetail.message ||
+          "Retry failed",
       );
       setShowToast(true);
       setTimeout(() => setShowToast(false), 4000);
@@ -776,7 +786,8 @@ export default function JobPostingDetailPage({
     }
   };
 
-  const is404 = (error as { response?: { status?: number } })?.response?.status === 404;
+  const is404 =
+    (error as { response?: { status?: number } })?.response?.status === 404;
 
   return (
     <ProtectedRoute>

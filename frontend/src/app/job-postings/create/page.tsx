@@ -81,7 +81,8 @@ export default function CreateJobPostingPage() {
       router.push("/job-postings");
     },
     onError: (error: unknown) => {
-      const detail = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail;
+      const detail = (error as { response?: { data?: { detail?: string } } })
+        .response?.data?.detail;
       if (typeof detail === "string") {
         const fieldErrors = detail.split(", ");
         fieldErrors.forEach((errStr) => {

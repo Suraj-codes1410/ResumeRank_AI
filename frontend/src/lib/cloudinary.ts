@@ -32,7 +32,10 @@ export async function uploadResumeToCloudinary(file: File): Promise<string> {
       await apiClient.post<SignatureResponse>("/uploads/signature");
     signatureData = response.data;
   } catch (error: unknown) {
-    const err = error as { response?: { data?: { message?: string; detail?: string } }; message?: string };
+    const err = error as {
+      response?: { data?: { message?: string; detail?: string } };
+      message?: string;
+    };
     const errorMessage =
       err.response?.data?.message ||
       err.response?.data?.detail ||
@@ -66,7 +69,10 @@ export async function uploadResumeToCloudinary(file: File): Promise<string> {
       throw new Error("Cloudinary response did not contain secure_url");
     }
   } catch (error: unknown) {
-    const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
+    const err = error as {
+      response?: { data?: { error?: { message?: string } } };
+      message?: string;
+    };
     const errorMessage =
       err.response?.data?.error?.message ||
       err.message ||
