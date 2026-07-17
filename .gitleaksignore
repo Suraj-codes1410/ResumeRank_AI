@@ -1,0 +1,2 @@
+# GitLeaks ignore file
+backend/.env.example
