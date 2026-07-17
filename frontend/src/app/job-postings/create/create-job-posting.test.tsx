@@ -120,7 +120,7 @@ describe("CreateJobPostingPage Form Tests", () => {
           title: "Python Engineer",
           description: "Building REST endpoints",
         }),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
