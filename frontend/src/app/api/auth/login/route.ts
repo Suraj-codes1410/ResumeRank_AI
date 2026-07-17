@@ -1,27 +1,27 @@
-import { NextResponse } from 'next/server';
-import axios from 'axios';
+import { NextResponse } from "next/server";
+import axios from "axios";
 
-const BACKEND_URL = process.env.BACKEND_API_URL || 'http://localhost:8081';
+const BACKEND_URL = process.env.BACKEND_API_URL || "http://localhost:8081";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const response = await axios.post(`${BACKEND_URL}/api/auth/login`, body, {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
 
     const { accessToken, refreshToken, emailVerified } = response.data;
 
     const nextResponse = NextResponse.json(
       { accessToken, emailVerified },
-      { status: 200 }
+      { status: 200 },
     );
 
-    nextResponse.cookies.set('refreshToken', refreshToken, {
+    nextResponse.cookies.set("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      path: '/',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
       maxAge: 604800, // 7 days
     });
 
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     const err = error as { response?: { status?: number; data?: unknown } };
     const status = err.response?.status || 500;
-    const detail = err.response?.data || { detail: 'Internal Server Error' };
+    const detail = err.response?.data || { detail: "Internal Server Error" };
     return NextResponse.json(detail, { status });
   }
 }

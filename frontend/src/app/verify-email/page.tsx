@@ -1,35 +1,35 @@
-'use client';
+"use client";
 
-import React, { Suspense, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { Fraunces, Inter } from 'next/font/google';
-import { apiClient } from '@/lib/api-client';
+import React, { Suspense, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Fraunces, Inter } from "next/font/google";
+import { apiClient } from "@/lib/api-client";
 
 const fraunces = Fraunces({
-  subsets: ['latin'],
-  display: 'swap',
-  weight: ['400', '500'],
-  variable: '--font-fraunces',
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500"],
+  variable: "--font-fraunces",
 });
 
 const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  weight: ['400'],
-  variable: '--font-inter',
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400"],
+  variable: "--font-inter",
 });
 
 function VerifyEmailForm() {
   const searchParams = useSearchParams();
-  const token = searchParams.get('token') || '';
+  const token = searchParams.get("token") || "";
 
   const { data, status, error } = useQuery({
-    queryKey: ['verifyEmail', token],
+    queryKey: ["verifyEmail", token],
     queryFn: async () => {
-      if (!token) throw new Error('No verification token provided.');
+      if (!token) throw new Error("No verification token provided.");
       const response = await apiClient.get(`/auth/verify-email?token=${token}`);
       return response.data;
     },
@@ -37,15 +37,19 @@ function VerifyEmailForm() {
   });
 
   const serverError = error
-    ? (axios.isAxiosError(error)
-      ? (error.response?.data?.detail || error.response?.data?.message || 'Verification failed')
-      : error.message)
+    ? axios.isAxiosError(error)
+      ? error.response?.data?.detail ||
+        error.response?.data?.message ||
+        "Verification failed"
+      : error.message
     : null;
 
   return (
     <div className="max-w-md w-full space-y-8 bg-brand-surface border border-brand-border p-8 rounded-xl shadow-2xl text-center">
       <div>
-        <h2 className={`mt-6 text-3xl font-medium text-brand-text-primary tracking-tight ${fraunces.className}`}>
+        <h2
+          className={`mt-6 text-3xl font-medium text-brand-text-primary tracking-tight ${fraunces.className}`}
+        >
           Email Verification
         </h2>
       </div>
@@ -53,12 +57,13 @@ function VerifyEmailForm() {
       {!token && (
         <div className="rounded bg-rose-950/20 border border-rose-500/30 p-4">
           <div className="text-sm font-medium text-rose-400">
-            Missing verification token. Please copy the complete URL link from your console.
+            Missing verification token. Please copy the complete URL link from
+            your console.
           </div>
         </div>
       )}
 
-      {token && status === 'pending' && (
+      {token && status === "pending" && (
         <div className="flex flex-col items-center space-y-4 py-8">
           <svg
             className="animate-spin h-10 w-10 text-brand-accent"
@@ -80,11 +85,13 @@ function VerifyEmailForm() {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-          <div className="text-brand-text-secondary text-sm">Verifying your email address...</div>
+          <div className="text-brand-text-secondary text-sm">
+            Verifying your email address...
+          </div>
         </div>
       )}
 
-      {status === 'success' && (
+      {status === "success" && (
         <div className="space-y-6">
           <div className="rounded bg-brand-accent-secondary/10 border border-brand-accent-secondary/30 p-4">
             <div className="text-sm font-medium text-brand-accent-secondary">
@@ -100,7 +107,7 @@ function VerifyEmailForm() {
         </div>
       )}
 
-      {status === 'error' && (
+      {status === "error" && (
         <div className="space-y-6">
           <div className="rounded bg-rose-950/20 border border-rose-500/30 p-4">
             <div className="text-sm font-medium text-rose-400">
@@ -121,12 +128,16 @@ function VerifyEmailForm() {
 
 export default function VerifyEmailPage() {
   return (
-    <div className={`min-h-screen flex items-center justify-center bg-brand-bg text-brand-text-primary px-4 py-12 sm:px-6 lg:px-8 font-sans ${inter.variable} ${fraunces.variable}`}>
-      <Suspense fallback={
-        <div className="max-w-md w-full text-center text-brand-text-secondary py-12">
-          Loading verification info...
-        </div>
-      }>
+    <div
+      className={`min-h-screen flex items-center justify-center bg-brand-bg text-brand-text-primary px-4 py-12 sm:px-6 lg:px-8 font-sans ${inter.variable} ${fraunces.variable}`}
+    >
+      <Suspense
+        fallback={
+          <div className="max-w-md w-full text-center text-brand-text-secondary py-12">
+            Loading verification info...
+          </div>
+        }
+      >
         <VerifyEmailForm />
       </Suspense>
     </div>

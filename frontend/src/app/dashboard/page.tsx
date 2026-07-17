@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { useAuth } from '@/context/auth-context';
-import ProtectedRoute from '../components/protected-route';
+import React from "react";
+import { useAuth } from "@/context/auth-context";
+import ProtectedRoute from "../components/protected-route";
 
 export default function DashboardPage() {
   const { email, logout } = useAuth();
@@ -13,7 +13,8 @@ export default function DashboardPage() {
         <div className="max-w-md w-full text-center space-y-6 bg-brand-surface border border-brand-border p-8 rounded-xl shadow-2xl">
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-md text-brand-text-secondary">
-            You are logged in as <span className="text-brand-accent font-semibold">{email}</span>
+            You are logged in as{" "}
+            <span className="text-brand-accent font-semibold">{email}</span>
           </p>
           <button
             onClick={logout}

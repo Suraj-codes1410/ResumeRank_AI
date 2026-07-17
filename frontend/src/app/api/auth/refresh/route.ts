@@ -1,41 +1,54 @@
-import { NextResponse } from 'next/server';
-import axios from 'axios';
+import { NextResponse } from "next/server";
+import axios from "axios";
 
-const BACKEND_URL = process.env.BACKEND_API_URL || 'http://localhost:8081';
+const BACKEND_URL = process.env.BACKEND_API_URL || "http://localhost:8081";
 
 export async function POST(request: Request) {
   try {
     // 1. Get refresh token from httpOnly cookie
-    const cookieHeader = request.headers.get('cookie') || '';
+    const cookieHeader = request.headers.get("cookie") || "";
     // Simple helper to parse cookie
     const getCookie = (name: string) => {
-      const match = cookieHeader.match(new RegExp('(^|;\\s*)' + name + '=([^;]*)'));
+      const match = cookieHeader.match(
+        new RegExp("(^|;\\s*)" + name + "=([^;]*)"),
+      );
       return match ? decodeURIComponent(match[2]) : null;
     };
-    
-    const refreshToken = getCookie('refreshToken');
+
+    const refreshToken = getCookie("refreshToken");
     if (!refreshToken) {
-      return NextResponse.json({ detail: 'No refresh token provided' }, { status: 401 });
+      return NextResponse.json(
+        { detail: "No refresh token provided" },
+        { status: 401 },
+      );
     }
 
     // 2. Call backend /api/auth/refresh
-    const response = await axios.post(`${BACKEND_URL}/api/auth/refresh`, { refreshToken }, {
-      headers: { 'Content-Type': 'application/json' },
-    });
+    const response = await axios.post(
+      `${BACKEND_URL}/api/auth/refresh`,
+      { refreshToken },
+      {
+        headers: { "Content-Type": "application/json" },
+      },
+    );
 
-    const { accessToken, refreshToken: newRefreshToken, emailVerified } = response.data;
+    const {
+      accessToken,
+      refreshToken: newRefreshToken,
+      emailVerified,
+    } = response.data;
 
     // 3. Return response with updated httpOnly cookie
     const nextResponse = NextResponse.json(
       { accessToken, emailVerified },
-      { status: 200 }
+      { status: 200 },
     );
 
-    nextResponse.cookies.set('refreshToken', newRefreshToken, {
+    nextResponse.cookies.set("refreshToken", newRefreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      path: '/',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
       maxAge: 604800, // 7 days
     });
 
@@ -43,11 +56,11 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     const err = error as { response?: { status?: number; data?: unknown } };
     const status = err.response?.status || 401;
-    const detail = err.response?.data || { detail: 'Refresh failed' };
-    
+    const detail = err.response?.data || { detail: "Refresh failed" };
+
     // Clear cookie on failure
     const nextResponse = NextResponse.json(detail, { status });
-    nextResponse.cookies.delete('refreshToken');
+    nextResponse.cookies.delete("refreshToken");
     return nextResponse;
   }
 }

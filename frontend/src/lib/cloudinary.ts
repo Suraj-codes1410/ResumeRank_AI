@@ -1,5 +1,5 @@
-import { apiClient } from './api-client';
-import axios from 'axios';
+import { apiClient } from "./api-client";
+import axios from "axios";
 
 interface SignatureResponse {
   timestamp: number;
@@ -10,28 +10,33 @@ interface SignatureResponse {
 }
 
 const ALLOWED_MIME_TYPES = [
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 export async function uploadResumeToCloudinary(file: File): Promise<string> {
   // 1. Client-side Validation (BEFORE requesting signature)
   if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-    throw new Error('Invalid file type. Only PDF and DOCX files are allowed.');
+    throw new Error("Invalid file type. Only PDF and DOCX files are allowed.");
   }
 
   if (file.size > MAX_FILE_SIZE) {
-    throw new Error('File size exceeds the 5MB limit.');
+    throw new Error("File size exceeds the 5MB limit.");
   }
 
   // 2. Fetch Upload Signature from BFF Proxy
   let signatureData: SignatureResponse;
   try {
-    const response = await apiClient.post<SignatureResponse>('/uploads/signature');
+    const response =
+      await apiClient.post<SignatureResponse>("/uploads/signature");
     signatureData = response.data;
   } catch (error: any) {
-    const errorMessage = error.response?.data?.message || error.response?.data?.detail || error.message || 'Failed to get upload signature';
+    const errorMessage =
+      error.response?.data?.message ||
+      error.response?.data?.detail ||
+      error.message ||
+      "Failed to get upload signature";
     throw new Error(`Authentication signature failed: ${errorMessage}`);
   }
 
@@ -39,28 +44,31 @@ export async function uploadResumeToCloudinary(file: File): Promise<string> {
 
   // 3. Upload Directly to Cloudinary using multipart/form-data
   const formData = new FormData();
-  formData.append('file', file);
-  formData.append('api_key', apiKey);
-  formData.append('timestamp', timestamp.toString());
-  formData.append('signature', signature);
-  formData.append('folder', folder);
-  formData.append('allowed_formats', 'pdf,docx');
+  formData.append("file", file);
+  formData.append("api_key", apiKey);
+  formData.append("timestamp", timestamp.toString());
+  formData.append("signature", signature);
+  formData.append("folder", folder);
+  formData.append("allowed_formats", "pdf,docx");
 
   try {
     const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
     const response = await axios.post(uploadUrl, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
 
     if (response.data && response.data.secure_url) {
       return response.data.secure_url;
     } else {
-      throw new Error('Cloudinary response did not contain secure_url');
+      throw new Error("Cloudinary response did not contain secure_url");
     }
   } catch (error: any) {
-    const errorMessage = error.response?.data?.error?.message || error.message || 'Failed to upload file to Cloudinary';
+    const errorMessage =
+      error.response?.data?.error?.message ||
+      error.message ||
+      "Failed to upload file to Cloudinary";
     throw new Error(`Cloudinary upload failed: ${errorMessage}`);
   }
 }

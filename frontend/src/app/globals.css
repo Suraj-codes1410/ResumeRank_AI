@@ -26,12 +26,12 @@ body {
 }
 
 @theme {
-  --color-brand-bg: #10141A;
-  --color-brand-surface: #171C24;
+  --color-brand-bg: #10141a;
+  --color-brand-surface: #171c24;
   --color-brand-border: rgba(255, 255, 255, 0.08);
-  --color-brand-text-primary: #E8E6E1;
-  --color-brand-text-secondary: #9A9690;
-  --color-brand-accent: #C99A52;
+  --color-brand-text-primary: #e8e6e1;
+  --color-brand-text-secondary: #9a9690;
+  --color-brand-accent: #c99a52;
   --color-brand-accent-secondary: #649987; /* Adjusted from #5C8C7B to meet WCAG AA 4.5:1 contrast ratio */
 
   /* Radius overrides to enforce consistent base radius of 8px */
@@ -53,4 +53,3 @@ body {
   --spacing-10: 32px;
   --spacing-20: 64px;
 }
-

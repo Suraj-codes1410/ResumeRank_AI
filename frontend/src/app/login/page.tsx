@@ -1,37 +1,37 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { useMutation } from '@tanstack/react-query';
-import axios from 'axios';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Fraunces, Inter } from 'next/font/google';
-import { apiClient } from '@/lib/api-client';
-import { useAuth } from '@/context/auth-context';
+import React, { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Fraunces, Inter } from "next/font/google";
+import { apiClient } from "@/lib/api-client";
+import { useAuth } from "@/context/auth-context";
 
 const fraunces = Fraunces({
-  subsets: ['latin'],
-  display: 'swap',
-  weight: ['400', '500'],
-  variable: '--font-fraunces',
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500"],
+  variable: "--font-fraunces",
 });
 
 const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  weight: ['400'],
-  variable: '--font-inter',
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400"],
+  variable: "--font-inter",
 });
 
 const loginSchema = z.object({
-  email: z.string()
-    .min(1, { message: 'Email is required' })
-    .email({ message: 'Invalid email format' }),
-  password: z.string()
-    .min(1, { message: 'Password is required' }),
+  email: z
+    .string()
+    .min(1, { message: "Email is required" })
+    .email({ message: "Invalid email format" }),
+  password: z.string().min(1, { message: "Password is required" }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -42,9 +42,9 @@ export default function LoginPage() {
   const [registered, setRegistered] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      if (params.get('registered') === 'true') {
+      if (params.get("registered") === "true") {
         setRegistered(true);
       }
     }
@@ -58,20 +58,20 @@ export default function LoginPage() {
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
     },
   });
 
   const mutation = useMutation({
     mutationFn: async (values: LoginFormValues) => {
-      const response = await apiClient.post('/auth/login', values);
+      const response = await apiClient.post("/auth/login", values);
       return response.data;
     },
     onSuccess: (data) => {
       setAuth(data.accessToken);
       reset();
-      router.push('/job-postings');
+      router.push("/job-postings");
     },
   });
 
@@ -80,20 +80,26 @@ export default function LoginPage() {
   };
 
   const serverError = mutation.error
-    ? (axios.isAxiosError(mutation.error)
-      ? (mutation.error.response?.data?.detail || mutation.error.response?.data?.message || 'Invalid credentials')
-      : 'Something went wrong')
+    ? axios.isAxiosError(mutation.error)
+      ? mutation.error.response?.data?.detail ||
+        mutation.error.response?.data?.message ||
+        "Invalid credentials"
+      : "Something went wrong"
     : null;
 
   return (
-    <div className={`min-h-screen flex items-center justify-center bg-brand-bg text-brand-text-primary px-4 py-12 sm:px-6 lg:px-8 font-sans ${inter.variable} ${fraunces.variable}`}>
+    <div
+      className={`min-h-screen flex items-center justify-center bg-brand-bg text-brand-text-primary px-4 py-12 sm:px-6 lg:px-8 font-sans ${inter.variable} ${fraunces.variable}`}
+    >
       <div className="max-w-md w-full space-y-8 bg-brand-surface border border-brand-border p-8 rounded-xl shadow-2xl transition-all duration-300">
         <div>
-          <h2 className={`mt-6 text-center text-3xl font-medium text-brand-text-primary tracking-tight ${fraunces.className}`}>
+          <h2
+            className={`mt-6 text-center text-3xl font-medium text-brand-text-primary tracking-tight ${fraunces.className}`}
+          >
             Sign in to your account
           </h2>
           <p className="mt-2 text-center text-sm text-brand-text-secondary">
-            Or{' '}
+            Or{" "}
             <Link
               href="/signup"
               className="font-medium text-brand-accent hover:text-brand-accent/80 transition-colors focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg focus-visible:outline-none rounded"
@@ -106,7 +112,8 @@ export default function LoginPage() {
         {registered && (
           <div className="rounded bg-brand-accent-secondary/10 border border-brand-accent-secondary/30 p-4">
             <div className="text-sm font-medium text-brand-accent-secondary">
-              Account created successfully! A verification link has been sent to your email.
+              Account created successfully! A verification link has been sent to
+              your email.
             </div>
           </div>
         )}
@@ -121,7 +128,8 @@ export default function LoginPage() {
             {mutation.data.emailVerified === false && (
               <div className="rounded bg-brand-accent/10 border border-brand-accent/30 p-4">
                 <div className="text-sm font-medium text-brand-accent">
-                  Warning: Your email is not verified yet. Please check your console logs for the verification link.
+                  Warning: Your email is not verified yet. Please check your
+                  console logs for the verification link.
                 </div>
               </div>
             )}
@@ -130,34 +138,48 @@ export default function LoginPage() {
 
         {serverError && (
           <div className="rounded bg-rose-950/20 border border-rose-500/30 p-4">
-            <div className="text-sm font-medium text-rose-400">{serverError}</div>
+            <div className="text-sm font-medium text-rose-400">
+              {serverError}
+            </div>
           </div>
         )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)} noValidate>
+        <form
+          className="mt-8 space-y-6"
+          onSubmit={handleSubmit(onSubmit)}
+          noValidate
+        >
           <div className="space-y-4">
             <div>
-              <label htmlFor="email-address" className="block text-sm font-medium text-brand-text-secondary mb-1">
+              <label
+                htmlFor="email-address"
+                className="block text-sm font-medium text-brand-text-secondary mb-1"
+              >
                 Email address
               </label>
               <input
                 id="email-address"
                 type="email"
                 autoComplete="email"
-                {...register('email')}
+                {...register("email")}
                 className={`appearance-none rounded-lg relative block w-full px-3 py-2.5 border bg-brand-bg/40 text-brand-text-primary placeholder-neutral-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg transition-all duration-200 ${
-                  errors.email ? 'border-rose-500/60' : 'border-brand-border'
+                  errors.email ? "border-rose-500/60" : "border-brand-border"
                 }`}
                 placeholder="you@example.com"
               />
               {errors.email && (
-                <p className="mt-1 text-xs text-rose-400">{errors.email.message}</p>
+                <p className="mt-1 text-xs text-rose-400">
+                  {errors.email.message}
+                </p>
               )}
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label htmlFor="password" className="block text-sm font-medium text-brand-text-secondary">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-brand-text-secondary"
+                >
                   Password
                 </label>
                 <div className="text-sm">
@@ -173,14 +195,16 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 autoComplete="current-password"
-                {...register('password')}
+                {...register("password")}
                 className={`appearance-none rounded-lg relative block w-full px-3 py-2.5 border bg-brand-bg/40 text-brand-text-primary placeholder-neutral-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg transition-all duration-200 ${
-                  errors.password ? 'border-rose-500/60' : 'border-brand-border'
+                  errors.password ? "border-rose-500/60" : "border-brand-border"
                 }`}
                 placeholder="Password"
               />
               {errors.password && (
-                <p className="mt-1 text-xs text-rose-400">{errors.password.message}</p>
+                <p className="mt-1 text-xs text-rose-400">
+                  {errors.password.message}
+                </p>
               )}
             </div>
           </div>

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 
 interface FeatureCardProps {
   icon: React.ReactNode;
@@ -9,7 +9,12 @@ interface FeatureCardProps {
   className?: string;
 }
 
-export default function FeatureCard({ icon, title, description, className = '' }: FeatureCardProps) {
+export default function FeatureCard({
+  icon,
+  title,
+  description,
+  className = "",
+}: FeatureCardProps) {
   return (
     <div
       className={`bg-brand-surface border border-brand-border p-6 rounded-xl transition-all duration-300 hover:border-brand-border/80 flex flex-col items-start ${className}`}

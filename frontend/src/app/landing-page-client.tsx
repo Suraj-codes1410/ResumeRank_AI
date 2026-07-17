@@ -1,23 +1,23 @@
-'use client';
+"use client";
 
-import React, { useEffect, useRef, useState } from 'react';
-import { Fraunces, Inter } from 'next/font/google';
-import ScoreCard from './components/ScoreCard';
-import FeatureCard from './components/FeatureCard';
+import React, { useEffect, useRef, useState } from "react";
+import { Fraunces, Inter } from "next/font/google";
+import ScoreCard from "./components/ScoreCard";
+import FeatureCard from "./components/FeatureCard";
 
 // Load Google Fonts
 const fraunces = Fraunces({
-  subsets: ['latin'],
-  display: 'swap',
-  weight: ['400', '500'],
-  variable: '--font-fraunces',
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500"],
+  variable: "--font-fraunces",
 });
 
 const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  weight: ['400'],
-  variable: '--font-inter',
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400"],
+  variable: "--font-inter",
 });
 
 export default function LandingPageClient() {
@@ -39,7 +39,7 @@ export default function LandingPageClient() {
           observer.unobserve(entry.target);
         }
       },
-      { threshold: 0.15 }
+      { threshold: 0.15 },
     );
 
     if (featuresRef.current) {
@@ -115,18 +115,30 @@ export default function LandingPageClient() {
     >
       {/* 1. Navigation Bar */}
       <nav className="w-full max-w-7xl mx-auto px-6 py-6 flex justify-between items-center border-b border-brand-border/40">
-        <a href="/" className={`text-xl font-bold tracking-tight ${fraunces.className}`}>
+        <a
+          href="/"
+          className={`text-xl font-bold tracking-tight ${fraunces.className}`}
+        >
           ResumeRank
         </a>
-        
+
         <div className="hidden md:flex gap-8 text-sm text-brand-text-secondary">
-          <a href="#product" className="hover:text-brand-text-primary transition-colors duration-200">
+          <a
+            href="#product"
+            className="hover:text-brand-text-primary transition-colors duration-200"
+          >
             Product
           </a>
-          <a href="#how-it-works" className="hover:text-brand-text-primary transition-colors duration-200">
+          <a
+            href="#how-it-works"
+            className="hover:text-brand-text-primary transition-colors duration-200"
+          >
             How it works
           </a>
-          <a href="#pricing" className="hover:text-brand-text-primary transition-colors duration-200">
+          <a
+            href="#pricing"
+            className="hover:text-brand-text-primary transition-colors duration-200"
+          >
             Pricing
           </a>
         </div>
@@ -134,7 +146,7 @@ export default function LandingPageClient() {
         <a
           href="/signup"
           className="text-xs uppercase tracking-wider font-semibold border border-brand-accent px-4 py-2 text-brand-accent hover:bg-brand-accent/10 transition-all duration-200"
-          style={{ borderRadius: 'var(--radius, 6px)' }}
+          style={{ borderRadius: "var(--radius, 6px)" }}
         >
           Get started
         </a>
@@ -145,7 +157,9 @@ export default function LandingPageClient() {
         {/* Left Side: Hero Copy */}
         <div
           className={`lg:col-span-7 space-y-6 transition-all duration-700 ease-out transform ${
-            isHeroLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            isHeroLoaded
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-4"
           }`}
         >
           {/* Eyebrow Pill */}
@@ -154,13 +168,18 @@ export default function LandingPageClient() {
           </div>
 
           {/* Headline */}
-          <h1 className={`text-3xl sm:text-5xl font-medium tracking-tight text-brand-text-primary leading-tight ${fraunces.className}`}>
-            Identify the right hire, faster, with explainable AI candidate scoring.
+          <h1
+            className={`text-3xl sm:text-5xl font-medium tracking-tight text-brand-text-primary leading-tight ${fraunces.className}`}
+          >
+            Identify the right hire, faster, with explainable AI candidate
+            scoring.
           </h1>
 
           {/* Supporting Copy */}
           <p className="text-md sm:text-lg leading-relaxed text-brand-text-secondary max-w-2xl">
-            Automatically parse resumes, evaluate alignment against target criteria, and review transparent scoring breakdowns that trust human oversight first.
+            Automatically parse resumes, evaluate alignment against target
+            criteria, and review transparent scoring breakdowns that trust human
+            oversight first.
           </p>
 
           {/* Action CTAs */}
@@ -168,14 +187,14 @@ export default function LandingPageClient() {
             <a
               href="/signup"
               className="inline-flex justify-center items-center border border-brand-accent px-6 py-3 text-sm font-semibold tracking-wide text-brand-accent hover:bg-brand-accent/10 transition-all duration-200"
-              style={{ borderRadius: 'var(--radius, 6px)' }}
+              style={{ borderRadius: "var(--radius, 6px)" }}
             >
               Get started
             </a>
             <a
               href="#product"
               className="inline-flex justify-center items-center border border-brand-border px-6 py-3 text-sm font-semibold tracking-wide text-brand-text-secondary hover:text-brand-text-primary hover:border-brand-border/80 transition-all duration-200"
-              style={{ borderRadius: 'var(--radius, 6px)' }}
+              style={{ borderRadius: "var(--radius, 6px)" }}
             >
               See a sample scorecard
             </a>
@@ -185,7 +204,9 @@ export default function LandingPageClient() {
         {/* Right Side: Signature Element Card */}
         <div
           className={`lg:col-span-5 flex justify-center lg:justify-end transition-all duration-1000 ease-out transform delay-300 ${
-            isHeroLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            isHeroLoaded
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-4"
           }`}
         >
           <ScoreCard />
@@ -199,7 +220,9 @@ export default function LandingPageClient() {
         className="w-full max-w-7xl mx-auto px-6 py-20 border-t border-brand-border/40"
       >
         <div className="mb-12">
-          <h2 className={`text-2xl sm:text-3xl font-medium text-brand-text-primary ${fraunces.className}`}>
+          <h2
+            className={`text-2xl sm:text-3xl font-medium text-brand-text-primary ${fraunces.className}`}
+          >
             Built for structured evaluation
           </h2>
           <p className="text-sm text-brand-text-secondary mt-2">
@@ -213,7 +236,9 @@ export default function LandingPageClient() {
             title="Structure Extraction"
             description="Extract text directly from PDF and DOCX files into formatted candidate fields automatically."
             className={`transition-all duration-700 delay-100 transform ${
-              isFeaturesVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              isFeaturesVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-8"
             }`}
           />
           <FeatureCard
@@ -221,7 +246,9 @@ export default function LandingPageClient() {
             title="Explainable Scoring"
             description="View transparent criteria scoring breakdowns instead of opaque, black-box recommendations."
             className={`transition-all duration-700 delay-200 transform ${
-              isFeaturesVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              isFeaturesVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-8"
             }`}
           />
           <FeatureCard
@@ -229,7 +256,9 @@ export default function LandingPageClient() {
             title="Ranked Pipelines"
             description="Order candidate rosters instantly by match scores to highlight high-priority matches."
             className={`transition-all duration-700 delay-300 transform ${
-              isFeaturesVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              isFeaturesVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-8"
             }`}
           />
         </div>

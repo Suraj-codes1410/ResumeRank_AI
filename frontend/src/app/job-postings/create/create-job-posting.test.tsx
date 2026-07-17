@@ -1,34 +1,36 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import CreateJobPostingPage from './page';
-import { apiClient } from '@/lib/api-client';
+import React from "react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import CreateJobPostingPage from "./page";
+import { apiClient } from "@/lib/api-client";
 
 // Mock useRouter
 const mockPush = vi.fn();
-vi.mock('next/navigation', () => ({
+vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: mockPush,
   }),
 }));
 
 // Mock Auth Context
-vi.mock('@/context/auth-context', () => ({
+vi.mock("@/context/auth-context", () => ({
   useAuth: () => ({
-    accessToken: 'mocked-token-123',
-    user: { email: 'recruiter@example.com' },
+    accessToken: "mocked-token-123",
+    user: { email: "recruiter@example.com" },
   }),
-  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  AuthProvider: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
 }));
 
 // Mock Protected Route
-vi.mock('../../components/protected-route', () => ({
+vi.mock("../../components/protected-route", () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 // Mock API Client
-vi.mock('@/lib/api-client', () => ({
+vi.mock("@/lib/api-client", () => ({
   apiClient: {
     post: vi.fn(),
   },
@@ -42,26 +44,28 @@ const createTestQueryClient = () =>
     },
   });
 
-describe('CreateJobPostingPage Form Tests', () => {
+describe("CreateJobPostingPage Form Tests", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('submitting with an empty title shows a validation error and does not call the mutation', async () => {
+  it("submitting with an empty title shows a validation error and does not call the mutation", async () => {
     const queryClient = createTestQueryClient();
     render(
       <QueryClientProvider client={queryClient}>
         <CreateJobPostingPage />
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     // Populate description, leave title blank
     fireEvent.change(screen.getByLabelText(/Job Description/i), {
-      target: { value: 'This is a description of the job posting.' },
+      target: { value: "This is a description of the job posting." },
     });
 
     // Click submit
-    fireEvent.click(screen.getByRole('button', { name: /Publish Job Posting/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Publish Job Posting/i }),
+    );
 
     // Assert validation message shows up and API is not called
     await waitFor(() => {
@@ -71,20 +75,20 @@ describe('CreateJobPostingPage Form Tests', () => {
     expect(apiClient.post).not.toHaveBeenCalled();
   });
 
-  it('a successful submission navigates away', async () => {
+  it("a successful submission navigates away", async () => {
     // Mock successful API response
     vi.mocked(apiClient.post).mockResolvedValue({
       data: {
-        id: 'new-job-123',
-        title: 'Python Engineer',
-        description: 'Building REST endpoints',
-        requiredSkills: ['Python'],
+        id: "new-job-123",
+        title: "Python Engineer",
+        description: "Building REST endpoints",
+        requiredSkills: ["Python"],
         niceToHaveSkills: [],
         minYearsExperience: 3,
-        seniorityLevel: 'MID',
-        status: 'ACTIVE',
-        createdAt: '2026-07-10T12:00:00Z',
-        updatedAt: '2026-07-10T12:00:00Z',
+        seniorityLevel: "MID",
+        status: "ACTIVE",
+        createdAt: "2026-07-10T12:00:00Z",
+        updatedAt: "2026-07-10T12:00:00Z",
       },
     });
 
@@ -92,23 +96,25 @@ describe('CreateJobPostingPage Form Tests', () => {
     render(
       <QueryClientProvider client={queryClient}>
         <CreateJobPostingPage />
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     // Populate title and description
     fireEvent.change(screen.getByLabelText(/Job Title/i), {
-      target: { value: 'Python Engineer' },
+      target: { value: "Python Engineer" },
     });
     fireEvent.change(screen.getByLabelText(/Job Description/i), {
-      target: { value: 'Building REST endpoints' },
+      target: { value: "Building REST endpoints" },
     });
 
     // Submit form
-    fireEvent.click(screen.getByRole('button', { name: /Publish Job Posting/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Publish Job Posting/i }),
+    );
 
     // Confirm navigation to /job-postings list page occurs
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/job-postings');
+      expect(mockPush).toHaveBeenCalledWith("/job-postings");
     });
 
     expect(apiClient.post).toHaveBeenCalledTimes(1);

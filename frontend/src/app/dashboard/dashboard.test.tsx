@@ -1,14 +1,14 @@
-import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useRouter } from 'next/navigation';
-import DashboardPage from './page';
-import { AuthProvider } from '@/context/auth-context';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import React from "react";
+import { render, screen, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { useRouter } from "next/navigation";
+import DashboardPage from "./page";
+import { AuthProvider } from "@/context/auth-context";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
 
 // Mock the API client
-vi.mock('@/lib/api-client', () => ({
+vi.mock("@/lib/api-client", () => ({
   apiClient: {
     post: vi.fn(),
   },
@@ -22,7 +22,7 @@ const createTestQueryClient = () =>
     },
   });
 
-describe('DashboardPage Route Protection', () => {
+describe("DashboardPage Route Protection", () => {
   const mockPush = vi.fn();
   const mockReplace = vi.fn();
 
@@ -35,9 +35,9 @@ describe('DashboardPage Route Protection', () => {
     } as unknown as ReturnType<typeof useRouter>);
   });
 
-  it('unauthenticated access redirects to /login when silent refresh fails', async () => {
+  it("unauthenticated access redirects to /login when silent refresh fails", async () => {
     // Mock refresh to fail
-    vi.mocked(apiClient.post).mockRejectedValue(new Error('Unauthorized'));
+    vi.mocked(apiClient.post).mockRejectedValue(new Error("Unauthorized"));
 
     const queryClient = createTestQueryClient();
     render(
@@ -45,7 +45,7 @@ describe('DashboardPage Route Protection', () => {
         <AuthProvider>
           <DashboardPage />
         </AuthProvider>
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     // Should render the verifying session state first
@@ -53,13 +53,14 @@ describe('DashboardPage Route Protection', () => {
 
     // Verify router replacement to /login occurs
     await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith('/login');
+      expect(mockReplace).toHaveBeenCalledWith("/login");
     });
   });
 
-  it('valid session reaches the placeholder page showing correct email', async () => {
+  it("valid session reaches the placeholder page showing correct email", async () => {
     // Mock refresh to succeed with a valid mock token containing the email claim
-    const mockToken = 'dummy.eyJlbWFpbCI6ICJ0ZXN0dXNlckBleGFtcGxlLmNvbSJ9.dummy';
+    const mockToken =
+      "dummy.eyJlbWFpbCI6ICJ0ZXN0dXNlckBleGFtcGxlLmNvbSJ9.dummy";
     vi.mocked(apiClient.post).mockResolvedValue({
       data: { accessToken: mockToken, emailVerified: true },
     });
@@ -70,7 +71,7 @@ describe('DashboardPage Route Protection', () => {
         <AuthProvider>
           <DashboardPage />
         </AuthProvider>
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     // Wait for the verifying session state to resolve and display the authenticated page
@@ -78,7 +79,7 @@ describe('DashboardPage Route Protection', () => {
       expect(screen.getByText(/you are logged in as/i)).toBeInTheDocument();
     });
 
-    expect(screen.getByText('testuser@example.com')).toBeInTheDocument();
+    expect(screen.getByText("testuser@example.com")).toBeInTheDocument();
     expect(mockReplace).not.toHaveBeenCalled();
   });
 });

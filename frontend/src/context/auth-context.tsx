@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { apiClient } from '@/lib/api-client';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { apiClient } from "@/lib/api-client";
 
 interface AuthContextType {
   accessToken: string | null;
@@ -17,13 +17,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const decodeJwt = (token: string) => {
   try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
     const jsonPayload = decodeURIComponent(
-      window.atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
+      window
+        .atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join(""),
     );
     return JSON.parse(jsonPayload);
   } catch (e) {
@@ -48,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshSession = async (): Promise<boolean> => {
     try {
-      const response = await apiClient.post('/auth/refresh');
+      const response = await apiClient.post("/auth/refresh");
       const token = response.data.accessToken;
       setAuth(token);
       return true;
@@ -71,15 +72,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{
-      accessToken,
-      email,
-      isAuthenticated: !!accessToken,
-      isLoading,
-      setAuth,
-      logout,
-      refreshSession
-    }}>
+    <AuthContext.Provider
+      value={{
+        accessToken,
+        email,
+        isAuthenticated: !!accessToken,
+        isLoading,
+        setAuth,
+        logout,
+        refreshSession,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -88,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

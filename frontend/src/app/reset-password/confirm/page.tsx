@@ -1,42 +1,43 @@
-'use client';
+"use client";
 
-import React, { Suspense, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { useMutation } from '@tanstack/react-query';
-import axios from 'axios';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { Fraunces, Inter } from 'next/font/google';
-import { apiClient } from '@/lib/api-client';
+import React, { Suspense, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Fraunces, Inter } from "next/font/google";
+import { apiClient } from "@/lib/api-client";
 
 const fraunces = Fraunces({
-  subsets: ['latin'],
-  display: 'swap',
-  weight: ['400', '500'],
-  variable: '--font-fraunces',
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500"],
+  variable: "--font-fraunces",
 });
 
 const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  weight: ['400'],
-  variable: '--font-inter',
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400"],
+  variable: "--font-inter",
 });
 
 const resetConfirmSchema = z.object({
-  token: z.string().min(1, { message: 'Token is required' }),
-  newPassword: z.string()
-    .min(1, { message: 'New password is required' })
-    .min(8, { message: 'Password must be at least 8 characters long' }),
+  token: z.string().min(1, { message: "Token is required" }),
+  newPassword: z
+    .string()
+    .min(1, { message: "New password is required" })
+    .min(8, { message: "Password must be at least 8 characters long" }),
 });
 
 type ResetConfirmFormValues = z.infer<typeof resetConfirmSchema>;
 
 function ResetPasswordConfirmForm() {
   const searchParams = useSearchParams();
-  const tokenParam = searchParams.get('token') || '';
+  const tokenParam = searchParams.get("token") || "";
 
   const {
     register,
@@ -47,20 +48,23 @@ function ResetPasswordConfirmForm() {
   } = useForm<ResetConfirmFormValues>({
     resolver: zodResolver(resetConfirmSchema),
     defaultValues: {
-      token: '',
-      newPassword: '',
+      token: "",
+      newPassword: "",
     },
   });
 
   useEffect(() => {
     if (tokenParam) {
-      setValue('token', tokenParam);
+      setValue("token", tokenParam);
     }
   }, [tokenParam, setValue]);
 
   const mutation = useMutation({
     mutationFn: async (values: ResetConfirmFormValues) => {
-      const response = await apiClient.post('/auth/reset-password/confirm', values);
+      const response = await apiClient.post(
+        "/auth/reset-password/confirm",
+        values,
+      );
       return response.data;
     },
     onSuccess: () => {
@@ -73,15 +77,19 @@ function ResetPasswordConfirmForm() {
   };
 
   const serverError = mutation.error
-    ? (axios.isAxiosError(mutation.error)
-      ? (mutation.error.response?.data?.detail || mutation.error.response?.data?.message || 'Failed to reset password')
-      : 'Something went wrong')
+    ? axios.isAxiosError(mutation.error)
+      ? mutation.error.response?.data?.detail ||
+        mutation.error.response?.data?.message ||
+        "Failed to reset password"
+      : "Something went wrong"
     : null;
 
   return (
     <div className="max-w-md w-full space-y-8 bg-brand-surface border border-brand-border p-8 rounded-xl shadow-2xl transition-all duration-300">
       <div>
-        <h2 className={`mt-6 text-center text-3xl font-medium text-brand-text-primary tracking-tight ${fraunces.className}`}>
+        <h2
+          className={`mt-6 text-center text-3xl font-medium text-brand-text-primary tracking-tight ${fraunces.className}`}
+        >
           Create new password
         </h2>
         <p className="mt-2 text-center text-sm text-brand-text-secondary">
@@ -92,10 +100,13 @@ function ResetPasswordConfirmForm() {
       {mutation.isSuccess && (
         <div className="rounded bg-brand-accent-secondary/10 border border-brand-accent-secondary/30 p-4">
           <div className="text-sm font-medium text-brand-accent-secondary">
-            Password has been reset successfully! You can now{' '}
-            <Link href="/login" className="underline font-semibold hover:text-brand-accent-secondary/80 transition-colors">
+            Password has been reset successfully! You can now{" "}
+            <Link
+              href="/login"
+              className="underline font-semibold hover:text-brand-accent-secondary/80 transition-colors"
+            >
               sign in
-            </Link>{' '}
+            </Link>{" "}
             with your new password.
           </div>
         </div>
@@ -107,42 +118,58 @@ function ResetPasswordConfirmForm() {
         </div>
       )}
 
-      <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)} noValidate>
+      <form
+        className="mt-8 space-y-6"
+        onSubmit={handleSubmit(onSubmit)}
+        noValidate
+      >
         <div className="space-y-4">
           <div>
-            <label htmlFor="token" className="block text-sm font-medium text-brand-text-secondary mb-1">
+            <label
+              htmlFor="token"
+              className="block text-sm font-medium text-brand-text-secondary mb-1"
+            >
               Reset Token
             </label>
             <input
               id="token"
               type="text"
-              {...register('token')}
+              {...register("token")}
               className={`appearance-none rounded-lg relative block w-full px-3 py-2.5 border bg-brand-bg/40 text-brand-text-primary placeholder-neutral-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg transition-all duration-200 ${
-                errors.token ? 'border-rose-500/60' : 'border-brand-border'
+                errors.token ? "border-rose-500/60" : "border-brand-border"
               }`}
               placeholder="Paste token from verification link"
             />
             {errors.token && (
-              <p className="mt-1 text-xs text-rose-400">{errors.token.message}</p>
+              <p className="mt-1 text-xs text-rose-400">
+                {errors.token.message}
+              </p>
             )}
           </div>
 
           <div>
-            <label htmlFor="newPassword" className="block text-sm font-medium text-brand-text-secondary mb-1">
+            <label
+              htmlFor="newPassword"
+              className="block text-sm font-medium text-brand-text-secondary mb-1"
+            >
               New Password
             </label>
             <input
               id="newPassword"
               type="password"
               autoComplete="new-password"
-              {...register('newPassword')}
+              {...register("newPassword")}
               className={`appearance-none rounded-lg relative block w-full px-3 py-2.5 border bg-brand-bg/40 text-brand-text-primary placeholder-neutral-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg transition-all duration-200 ${
-                errors.newPassword ? 'border-rose-500/60' : 'border-brand-border'
+                errors.newPassword
+                  ? "border-rose-500/60"
+                  : "border-brand-border"
               }`}
               placeholder="Minimum 8 characters"
             />
             {errors.newPassword && (
-              <p className="mt-1 text-xs text-rose-400">{errors.newPassword.message}</p>
+              <p className="mt-1 text-xs text-rose-400">
+                {errors.newPassword.message}
+              </p>
             )}
           </div>
         </div>
@@ -196,12 +223,16 @@ function ResetPasswordConfirmForm() {
 
 export default function ResetPasswordConfirmPage() {
   return (
-    <div className={`min-h-screen flex items-center justify-center bg-brand-bg text-brand-text-primary px-4 py-12 sm:px-6 lg:px-8 font-sans ${inter.variable} ${fraunces.variable}`}>
-      <Suspense fallback={
-        <div className="max-w-md w-full text-center text-brand-text-secondary py-12">
-          Loading reset details...
-        </div>
-      }>
+    <div
+      className={`min-h-screen flex items-center justify-center bg-brand-bg text-brand-text-primary px-4 py-12 sm:px-6 lg:px-8 font-sans ${inter.variable} ${fraunces.variable}`}
+    >
+      <Suspense
+        fallback={
+          <div className="max-w-md w-full text-center text-brand-text-secondary py-12">
+            Loading reset details...
+          </div>
+        }
+      >
         <ResetPasswordConfirmForm />
       </Suspense>
     </div>
