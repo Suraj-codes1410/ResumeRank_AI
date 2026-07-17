@@ -115,7 +115,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
       if (previousCandidate) {
         queryClient.setQueryData<Candidate>(['candidate', id, accessToken], {
           ...previousCandidate,
-          pipelineStatus: newStatus as any,
+          pipelineStatus: newStatus as Candidate['pipelineStatus'],
         });
       }
       return { previousCandidate };
@@ -166,7 +166,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
     }
   });
 
-  const is404 = (error as any)?.response?.status === 404;
+  const is404 = (error as { response?: { status?: number } })?.response?.status === 404;
 
   const handleStatusChange = (newStatus: string) => {
     updateStatusMutation.mutate(newStatus);
@@ -315,7 +315,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
                     Resume Evaluation in Progress
                   </h3>
                   <p className="text-sm text-brand-text-secondary max-w-md mx-auto">
-                    We are currently extracting and ranking this candidate's resume. This page will update automatically when the evaluation completes.
+                    We are currently extracting and ranking this candidate&apos;s resume. This page will update automatically when the evaluation completes.
                   </p>
                 </div>
               )}

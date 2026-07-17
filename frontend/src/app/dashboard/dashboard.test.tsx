@@ -32,7 +32,7 @@ describe('DashboardPage Route Protection', () => {
       push: mockPush,
       replace: mockReplace,
       prefetch: vi.fn(),
-    } as any);
+    } as unknown as ReturnType<typeof useRouter>);
   });
 
   it('unauthenticated access redirects to /login when silent refresh fails', async () => {

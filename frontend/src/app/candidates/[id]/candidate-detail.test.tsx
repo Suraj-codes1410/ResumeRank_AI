@@ -51,12 +51,12 @@ describe('CandidateDetailPage Tests', () => {
 
   it('renders all score sections for a scored candidate', async () => {
     const mockParams = {
-      then: (onFulfill: any) => {
+      then: (onFulfill: (value: { id: string }) => void) => {
         onFulfill({ id: 'candidate-123' });
       },
       status: 'fulfilled',
       value: { id: 'candidate-123' }
-    } as any;
+    } as unknown as Promise<{ id: string }>;
 
     const mockCandidate = {
       id: 'candidate-123',
@@ -126,12 +126,12 @@ describe('CandidateDetailPage Tests', () => {
 
   it('renders parseError and retry button for a failed candidate', async () => {
     const mockParams = {
-      then: (onFulfill: any) => {
+      then: (onFulfill: (value: { id: string }) => void) => {
         onFulfill({ id: 'candidate-123' });
       },
       status: 'fulfilled',
       value: { id: 'candidate-123' }
-    } as any;
+    } as unknown as Promise<{ id: string }>;
 
     const mockCandidate = {
       id: 'candidate-123',
@@ -191,12 +191,12 @@ describe('CandidateDetailPage Tests', () => {
 
   it('changing pipeline status calls the PATCH endpoint with the correct payload', async () => {
     const mockParams = {
-      then: (onFulfill: any) => {
+      then: (onFulfill: (value: { id: string }) => void) => {
         onFulfill({ id: 'candidate-123' });
       },
       status: 'fulfilled',
       value: { id: 'candidate-123' }
-    } as any;
+    } as unknown as Promise<{ id: string }>;
 
     const mockCandidate = {
       id: 'candidate-123',
