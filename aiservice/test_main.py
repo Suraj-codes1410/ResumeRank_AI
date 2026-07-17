@@ -1,5 +1,4 @@
 import os
-import pytest
 import requests
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
@@ -155,7 +154,7 @@ def test_score_resume_success(mock_from_messages):
     mock_chain.__or__.return_value = mock_chain
 
     from main import CandidateScoreResponse
-    mock_chain.invoke.return_value = CandidateScoreResponse(
+    score_response = CandidateScoreResponse(
         overallScore=85,
         skillsScore=90,
         experienceScore=80,
@@ -165,6 +164,9 @@ def test_score_resume_success(mock_from_messages):
         yearsExperienceDetected=5.0,
         summary="Strong candidate with good python skills."
     )
+    mock_message = MagicMock()
+    mock_message.content = score_response.model_dump_json()
+    mock_chain.invoke.return_value = mock_message
 
     response = client.post(
         "/internal/score-resume",
@@ -195,7 +197,7 @@ def test_score_resume_invalid_score_validation(mock_from_messages):
 
     from main import CandidateScoreResponse
     # Return 150 which is out of range (>100)
-    mock_chain.invoke.return_value = CandidateScoreResponse(
+    score_response = CandidateScoreResponse(
         overallScore=150,
         skillsScore=90,
         experienceScore=80,
@@ -205,6 +207,9 @@ def test_score_resume_invalid_score_validation(mock_from_messages):
         yearsExperienceDetected=3.0,
         summary="Overscored candidate."
     )
+    mock_message = MagicMock()
+    mock_message.content = score_response.model_dump_json()
+    mock_chain.invoke.return_value = mock_message
 
     response = client.post(
         "/internal/score-resume",

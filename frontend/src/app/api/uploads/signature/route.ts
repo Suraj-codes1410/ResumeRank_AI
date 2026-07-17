@@ -15,9 +15,10 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(response.data, { status: response.status });
-  } catch (error: any) {
-    const status = error.response?.status || 500;
-    const data = error.response?.data || { detail: 'Upload signature generation failed' };
+  } catch (error: unknown) {
+    const err = error as { response?: { status?: number; data?: unknown } };
+    const status = err.response?.status || 500;
+    const data = err.response?.data || { detail: 'Upload signature generation failed' };
     return NextResponse.json(data, { status });
   }
 }

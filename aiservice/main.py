@@ -1,4 +1,6 @@
 import io
+import json
+import logging
 import os
 import re
 import requests
@@ -12,6 +14,7 @@ from dotenv import load_dotenv
 from pydantic import Field
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
+
 
 # Load environment variables
 load_dotenv()
@@ -210,15 +213,13 @@ You MUST respond with ONLY a valid JSON object (no markdown, no extra text) in e
 }}
 """
 
-import json
-
 def parse_score_json(text: str) -> Optional[CandidateScoreResponse]:
     """Parse LLM text response into a CandidateScoreResponse."""
     cleaned = text.strip()
     # Strip markdown code fences if present
     if cleaned.startswith("```"):
         lines = cleaned.split("\n")
-        lines = [l for l in lines if not l.strip().startswith("```")]
+        lines = [line for line in lines if not line.strip().startswith("```")]
         cleaned = "\n".join(lines).strip()
     try:
         data = json.loads(cleaned)
@@ -304,7 +305,6 @@ class ProcessResumeRequest(BaseModel):
     niceToHaveSkills: list[str]
     minYearsExperience: Optional[float] = None
 
-import logging
 logger = logging.getLogger("uvicorn.error")
 
 async def send_webhook_callback(url: str, payload: dict, headers: dict):

@@ -10,9 +10,10 @@ export async function POST(request: Request) {
       headers: { 'Content-Type': 'application/json' },
     });
     return NextResponse.json(response.data, { status: 201 });
-  } catch (error: any) {
-    const status = error.response?.status || 500;
-    const detail = error.response?.data || { detail: 'Internal Server Error' };
+  } catch (error: unknown) {
+    const err = error as { response?: { status?: number; data?: unknown } };
+    const status = err.response?.status || 500;
+    const detail = err.response?.data || { detail: 'Internal Server Error' };
     return NextResponse.json(detail, { status });
   }
 }

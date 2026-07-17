@@ -40,9 +40,10 @@ export async function POST(request: Request) {
     });
 
     return nextResponse;
-  } catch (error: any) {
-    const status = error.response?.status || 401;
-    const detail = error.response?.data || { detail: 'Refresh failed' };
+  } catch (error: unknown) {
+    const err = error as { response?: { status?: number; data?: unknown } };
+    const status = err.response?.status || 401;
+    const detail = err.response?.data || { detail: 'Refresh failed' };
     
     // Clear cookie on failure
     const nextResponse = NextResponse.json(detail, { status });
