@@ -19,9 +19,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.springframework.test.context.ActiveProfiles;
+
 @WebMvcTest(InternalWebhookController.class)
 @Import(JwtInterceptor.class)
 @TestPropertySource(properties = "INTERNAL_SERVICE_TOKEN=test-token-123")
+@ActiveProfiles("test")
 class InternalWebhookControllerTest {
 
     @Autowired

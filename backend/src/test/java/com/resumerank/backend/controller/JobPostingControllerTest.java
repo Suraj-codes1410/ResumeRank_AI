@@ -27,8 +27,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.springframework.test.context.ActiveProfiles;
+
 @WebMvcTest(JobPostingController.class)
 @Import(JwtInterceptor.class)
+@ActiveProfiles("test")
 class JobPostingControllerTest {
 
     @Autowired

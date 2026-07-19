@@ -30,6 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         }
 )
 @Import(JwtInterceptor.class)
+@ActiveProfiles("test")
 class UploadControllerTest {
 
     @Autowired
