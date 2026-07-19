@@ -1,3 +1,4 @@
+# FastAPI AI Service entry point for ResumeRank
 import io
 import json
 import logging

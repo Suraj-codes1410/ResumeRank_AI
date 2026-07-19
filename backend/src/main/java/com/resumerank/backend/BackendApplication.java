@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.web.client.RestTemplate;
 
+// Spring Boot application entry point for ResumeRank Backend
 @SpringBootApplication
 @EnableAsync
 public class BackendApplication {

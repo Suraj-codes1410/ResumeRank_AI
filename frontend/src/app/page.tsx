@@ -1,3 +1,4 @@
+// Next.js Landing Page Entry for ResumeRank
 import React from "react";
 import type { Metadata } from "next";
 import LandingPageClient from "./landing-page-client";
