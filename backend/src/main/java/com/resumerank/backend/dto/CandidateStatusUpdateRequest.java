@@ -10,6 +10,10 @@ public class CandidateStatusUpdateRequest {
     public CandidateStatusUpdateRequest() {
     }
 
+    public CandidateStatusUpdateRequest(String status) {
+        this.status = status;
+    }
+
     public String getStatus() {
         return status;
     }

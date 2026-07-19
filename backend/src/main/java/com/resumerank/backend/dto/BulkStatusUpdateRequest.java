@@ -15,6 +15,11 @@ public class BulkStatusUpdateRequest {
     public BulkStatusUpdateRequest() {
     }
 
+    public BulkStatusUpdateRequest(List<String> candidateIds, String status) {
+        this.candidateIds = candidateIds;
+        this.status = status;
+    }
+
     public List<String> getCandidateIds() {
         return candidateIds;
     }

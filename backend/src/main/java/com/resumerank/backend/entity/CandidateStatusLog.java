@@ -71,6 +71,10 @@ public class CandidateStatusLog {
         return changedBy;
     }
 
+    public String getChangedByEmail() {
+        return changedBy != null ? changedBy.getEmail() : null;
+    }
+
     public void setChangedBy(User changedBy) {
         this.changedBy = changedBy;
     }

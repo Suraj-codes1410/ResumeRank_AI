@@ -28,8 +28,8 @@ public class TestEntityGenerator {
         posting.setId(UUID.randomUUID());
         posting.setTitle(title);
         posting.setDescription("Mock description for " + title);
-        posting.setRequiredSkills(List.of("Java", "Spring Boot"));
-        posting.setNiceToHaveSkills(List.of("Docker", "Kubernetes"));
+        posting.setRequiredSkills(new String[]{"Java", "Spring Boot"});
+        posting.setNiceToHaveSkills(new String[]{"Docker", "Kubernetes"});
         posting.setMinYearsExperience(5);
         posting.setSeniorityLevel(com.resumerank.backend.entity.SeniorityLevel.SENIOR);
         posting.setStatus(com.resumerank.backend.entity.JobPostingStatus.ACTIVE);
@@ -41,7 +41,7 @@ public class TestEntityGenerator {
     public static Candidate createMockCandidate(JobPosting posting, String name, String email) {
         Candidate candidate = new Candidate();
         candidate.setId(UUID.randomUUID());
-        candidate.setJobPostingId(posting.getId());
+        candidate.setJobPosting(posting);
         candidate.setName(name);
         candidate.setEmail(email);
         candidate.setResumeFileUrl("http://cloudinary.com/resumes/mock.pdf");

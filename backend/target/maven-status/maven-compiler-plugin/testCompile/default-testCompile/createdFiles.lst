@@ -1,5 +1,13 @@
-com\resumerank\backend\config\RateLimiterIntegrationTest.class
+com\resumerank\backend\controller\CandidateSecurityEndToEndTest.class
+com\resumerank\backend\config\JwtInterceptorTest.class
+com\resumerank\backend\controller\SecurityIntegrationTest.class
+com\resumerank\backend\service\AuthServiceTest.class
+com\resumerank\backend\controller\CandidateManagementIntegrationTest.class
+com\resumerank\backend\controller\AuthControllerTest.class
+com\resumerank\backend\service\JwtServiceTest.class
 com\resumerank\backend\service\JobPostingServiceTest.class
 com\resumerank\backend\controller\JobPostingControllerTest.class
-com\resumerank\backend\service\AuthServiceTest.class
-com\resumerank\backend\controller\AuthControllerTest.class
+com\resumerank\backend\controller\JobPostingIntegrationTest.class
+com\resumerank\backend\support\TestEntityGenerator.class
+com\resumerank\backend\support\BaseIntegrationTest.class
+com\resumerank\backend\config\RateLimiterIntegrationTest.class

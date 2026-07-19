@@ -14,4 +14,8 @@ public interface CandidateStatusLogRepository extends JpaRepository<CandidateSta
 
     @Query("SELECT l FROM CandidateStatusLog l JOIN FETCH l.changedBy WHERE l.candidate.id = :candidateId ORDER BY l.createdAt DESC")
     List<CandidateStatusLog> findByCandidateIdOrderByCreatedAtDesc(@Param("candidateId") UUID candidateId);
+
+    default List<CandidateStatusLog> findAllByCandidateIdOrderByCreatedAtDesc(UUID candidateId) {
+        return findByCandidateIdOrderByCreatedAtDesc(candidateId);
+    }
 }

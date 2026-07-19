@@ -1,4 +1,30 @@
 -------------------------------------------------------------------------------
 Test set: com.resumerank.backend.service.JobPostingServiceTest
 -------------------------------------------------------------------------------
-Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.068 s -- in com.resumerank.backend.service.JobPostingServiceTest
+Tests run: 12, Failures: 1, Errors: 1, Skipped: 0, Time elapsed: 0.028 s <<< FAILURE! -- in com.resumerank.backend.service.JobPostingServiceTest
+com.resumerank.backend.service.JobPostingServiceTest.createJobPosting_Success_SavesToRepository -- Time elapsed: 0.005 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "com.resumerank.backend.entity.JobPosting.getId()" because "saved" is null
+	at com.resumerank.backend.service.JobPostingService.createJobPosting(JobPostingService.java:49)
+	at com.resumerank.backend.service.JobPostingServiceTest.createJobPosting_Success_SavesToRepository(JobPostingServiceTest.java:213)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+com.resumerank.backend.service.JobPostingServiceTest.createJobPosting_UserNotFound_ThrowsResourceNotFoundException -- Time elapsed: 0.002 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: Unexpected exception type thrown, expected: <com.resumerank.backend.exception.ResourceNotFoundException> but was: <java.lang.IllegalArgumentException>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:67)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:35)
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3115)
+	at com.resumerank.backend.service.JobPostingServiceTest.createJobPosting_UserNotFound_ThrowsResourceNotFoundException(JobPostingServiceTest.java:229)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+Caused by: java.lang.IllegalArgumentException: User not found
+	at com.resumerank.backend.service.JobPostingService.lambda$createJobPosting$0(JobPostingService.java:34)
+	at java.base/java.util.Optional.orElseThrow(Optional.java:403)
+	at com.resumerank.backend.service.JobPostingService.createJobPosting(JobPostingService.java:34)
+	at com.resumerank.backend.service.JobPostingServiceTest.lambda$createJobPosting_UserNotFound_ThrowsResourceNotFoundException$4(JobPostingServiceTest.java:231)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:53)
+	... 6 more
+
