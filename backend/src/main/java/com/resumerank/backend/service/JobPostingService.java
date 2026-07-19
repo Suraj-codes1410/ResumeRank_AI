@@ -31,7 +31,7 @@ public class JobPostingService {
     @Transactional
     public JobPostingResponse createJobPosting(UUID userId, JobPostingCreateRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
 
         JobPosting jobPosting = new JobPosting();
         jobPosting.setUser(user);
