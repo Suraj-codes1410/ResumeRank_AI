@@ -204,7 +204,7 @@ class JobPostingServiceTest {
         );
 
         Mockito.when(userRepository.findById(recruiterAId)).thenReturn(java.util.Optional.of(recruiterA));
-        Mockito.when(jobPostingRepository.save(any(JobPosting.class))).thenAnswer(invocation -> {
+        Mockito.when(jobPostingRepository.saveAndFlush(any(JobPosting.class))).thenAnswer(invocation -> {
             JobPosting p = invocation.getArgument(0);
             p.setId(UUID.randomUUID());
             return p;
@@ -215,7 +215,7 @@ class JobPostingServiceTest {
         Assertions.assertNotNull(response.id());
         Assertions.assertEquals("Software Engineer", response.title());
         Assertions.assertEquals(recruiterAId, response.userId());
-        Mockito.verify(jobPostingRepository, Mockito.times(1)).save(any(JobPosting.class));
+        Mockito.verify(jobPostingRepository, Mockito.times(1)).saveAndFlush(any(JobPosting.class));
     }
 
     @Test
