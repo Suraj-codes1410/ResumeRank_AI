@@ -28,12 +28,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
+import org.springframework.test.context.ActiveProfiles;
 import java.util.UUID;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 @Transactional
 class CandidateListIntegrationTest {
 
