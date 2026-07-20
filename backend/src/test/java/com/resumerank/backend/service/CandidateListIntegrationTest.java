@@ -28,16 +28,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-import org.springframework.test.context.ActiveProfiles;
+import com.resumerank.backend.support.BaseIntegrationTest;
 import java.util.UUID;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("test")
-@Transactional
-class CandidateListIntegrationTest {
+class CandidateListIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
