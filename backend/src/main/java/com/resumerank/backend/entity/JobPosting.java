@@ -18,6 +18,8 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "job_postings")
@@ -42,9 +44,11 @@ public class JobPosting {
     @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
 
+    @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "required_skills", columnDefinition = "text[]")
     private String[] requiredSkills = new String[0];
 
+    @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "nice_to_have_skills", columnDefinition = "text[]")
     private String[] niceToHaveSkills = new String[0];
 
@@ -61,11 +65,11 @@ public class JobPosting {
     private JobPostingStatus status = JobPostingStatus.ACTIVE;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "timestamptz")
     private OffsetDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at", nullable = false, columnDefinition = "timestamptz")
     private OffsetDateTime updatedAt;
 
     public JobPosting() {
