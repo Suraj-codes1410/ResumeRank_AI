@@ -279,6 +279,10 @@ class CandidateManagementIntegrationTest extends BaseIntegrationTest {
         CandidateScore aliceScore = new CandidateScore();
         aliceScore.setCandidate(alice);
         aliceScore.setOverallScore(90);
+        aliceScore.setSkillsScore(90);
+        aliceScore.setExperienceScore(90);
+        aliceScore.setSeniorityScore(90);
+        aliceScore.setScoredAt(OffsetDateTime.now());
         aliceScore.setMatchedSkills(new String[]{"React", "Java"});
         aliceScore.setMissingSkills(new String[]{});
         candidateScoreRepository.saveAndFlush(aliceScore);
@@ -290,6 +294,10 @@ class CandidateManagementIntegrationTest extends BaseIntegrationTest {
         CandidateScore bobScore = new CandidateScore();
         bobScore.setCandidate(bob);
         bobScore.setOverallScore(50);
+        bobScore.setSkillsScore(50);
+        bobScore.setExperienceScore(50);
+        bobScore.setSeniorityScore(50);
+        bobScore.setScoredAt(OffsetDateTime.now());
         bobScore.setMatchedSkills(new String[]{"Python"});
         bobScore.setMissingSkills(new String[]{});
         candidateScoreRepository.saveAndFlush(bobScore);
@@ -352,8 +360,8 @@ class CandidateManagementIntegrationTest extends BaseIntegrationTest {
         // Check transition log
         List<CandidateStatusLog> logs = candidateStatusLogRepository.findAllByCandidateIdOrderByCreatedAtDesc(c.getId());
         Assertions.assertEquals(1, logs.size());
-        Assertions.assertEquals("NEW", logs.get(0).getFromStatus());
-        Assertions.assertEquals("SHORTLISTED", logs.get(0).getToStatus());
+        Assertions.assertEquals(PipelineStatus.NEW, logs.get(0).getFromStatus());
+        Assertions.assertEquals(PipelineStatus.SHORTLISTED, logs.get(0).getToStatus());
         Assertions.assertEquals(recruiter.getEmail(), logs.get(0).getChangedByEmail());
     }
 
