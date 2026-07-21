@@ -15,6 +15,8 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "candidate_scores")
@@ -54,10 +56,12 @@ public class CandidateScore {
     private Integer seniorityScore;
 
     @NotNull
+    @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "matched_skills", columnDefinition = "text[]", nullable = false)
     private String[] matchedSkills = new String[0];
 
     @NotNull
+    @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "missing_skills", columnDefinition = "text[]", nullable = false)
     private String[] missingSkills = new String[0];
 
@@ -68,7 +72,7 @@ public class CandidateScore {
     private String summary;
 
     @NotNull
-    @Column(name = "scored_at", nullable = false)
+    @Column(name = "scored_at", nullable = false, columnDefinition = "timestamptz")
     private OffsetDateTime scoredAt;
 
     public CandidateScore() {
