@@ -103,7 +103,7 @@ jobs:
   # Job 3: Integration Tests
   # ---------------------------------------------------------------------------
   integration-tests:
-    name: Integration Tests
+    name: Integration Tests & Coverage
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [unit-tests]
@@ -121,7 +121,7 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache: 'maven'
 
-      - name: Run integration tests
+      - name: Run integration tests and generate coverage
         run: mvn verify -B -Dspring.profiles.active=test
         env:
           SPRING_PROFILES_ACTIVE: test
@@ -134,13 +134,20 @@ jobs:
           path: backend/target/failsafe-reports/
           retention-days: 7
 
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/target/site/jacoco/
+          retention-days: 7
+
   # ---------------------------------------------------------------------------
-  # Job 4: Coverage & Build
+  # Job 4: Package & Upload Artifacts
   # ---------------------------------------------------------------------------
-  coverage-and-build:
-    name: Coverage & Build JAR
+  package:
+    name: Package & Upload Artifacts
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     needs: [integration-tests]
     defaults:
       run:
@@ -155,18 +162,6 @@ jobs:
           distribution: 'temurin'
           java-version: ${{ env.JAVA_VERSION }}
           cache: 'maven'
-
-      - name: Generate JaCoCo coverage report
-        run: mvn verify jacoco:report -B -Dspring.profiles.active=test
-        env:
-          SPRING_PROFILES_ACTIVE: test
-
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-coverage
-          path: backend/target/site/jacoco/
-          retention-days: 7
 
       - name: Build executable JAR
         run: mvn package -B -DskipTests
