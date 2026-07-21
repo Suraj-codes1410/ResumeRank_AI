@@ -1,0 +1,73 @@
+﻿2026-07-19T11:26:52.8792137Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-07-19T11:26:52.8801746Z ##[group]Run actions/checkout@v4
+2026-07-19T11:26:52.8802801Z with:
+2026-07-19T11:26:52.8803446Z   repository: Suraj-codes1410/ResumeRank_AI
+2026-07-19T11:26:52.8807567Z   token: ***
+2026-07-19T11:26:52.8808209Z   ssh-strict: true
+2026-07-19T11:26:52.8808910Z   ssh-user: git
+2026-07-19T11:26:52.8809510Z   persist-credentials: true
+2026-07-19T11:26:52.8810151Z   clean: true
+2026-07-19T11:26:52.8810755Z   sparse-checkout-cone-mode: true
+2026-07-19T11:26:52.8811449Z   fetch-depth: 1
+2026-07-19T11:26:52.8812018Z   fetch-tags: false
+2026-07-19T11:26:52.8812597Z   show-progress: true
+2026-07-19T11:26:52.8813217Z   lfs: false
+2026-07-19T11:26:52.8813784Z   submodules: false
+2026-07-19T11:26:52.8814548Z   set-safe-directory: true
+2026-07-19T11:26:52.8815468Z ##[endgroup]
+2026-07-19T11:26:52.9931803Z Syncing repository: Suraj-codes1410/ResumeRank_AI
+2026-07-19T11:26:52.9934195Z ##[group]Getting Git version info
+2026-07-19T11:26:52.9935094Z Working directory is '/home/runner/work/ResumeRank_AI/ResumeRank_AI'
+2026-07-19T11:26:52.9936305Z [command]/usr/bin/git version
+2026-07-19T11:26:52.9936965Z git version 2.54.0
+2026-07-19T11:26:52.9947916Z ##[endgroup]
+2026-07-19T11:26:52.9963117Z Temporarily overriding HOME='/home/runner/work/_temp/02aeecc7-4ca3-478b-8a1e-1521f513d869' before making global git config changes
+2026-07-19T11:26:52.9965297Z Adding repository directory to the temporary git global config as a safe directory
+2026-07-19T11:26:52.9969446Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ResumeRank_AI/ResumeRank_AI
+2026-07-19T11:26:53.0023687Z Deleting the contents of '/home/runner/work/ResumeRank_AI/ResumeRank_AI'
+2026-07-19T11:26:53.0027830Z ##[group]Initializing the repository
+2026-07-19T11:26:53.0035528Z [command]/usr/bin/git init /home/runner/work/ResumeRank_AI/ResumeRank_AI
+2026-07-19T11:26:53.0161765Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-07-19T11:26:53.0162992Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-07-19T11:26:53.0164039Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-07-19T11:26:53.0164847Z hint: call:
+2026-07-19T11:26:53.0165308Z hint:
+2026-07-19T11:26:53.0165899Z hint: 	git config --global init.defaultBranch <name>
+2026-07-19T11:26:53.0166578Z hint:
+2026-07-19T11:26:53.0167210Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-07-19T11:26:53.0168225Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-07-19T11:26:53.0169182Z hint:
+2026-07-19T11:26:53.0169662Z hint: 	git branch -m <name>
+2026-07-19T11:26:53.0170362Z hint:
+2026-07-19T11:26:53.0171647Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-07-19T11:26:53.0173843Z Initialized empty Git repository in /home/runner/work/ResumeRank_AI/ResumeRank_AI/.git/
+2026-07-19T11:26:53.0187122Z [command]/usr/bin/git remote add origin https://github.com/Suraj-codes1410/ResumeRank_AI
+2026-07-19T11:26:53.0230093Z ##[endgroup]
+2026-07-19T11:26:53.0231653Z ##[group]Disabling automatic garbage collection
+2026-07-19T11:26:53.0234306Z [command]/usr/bin/git config --local gc.auto 0
+2026-07-19T11:26:53.0263742Z ##[endgroup]
+2026-07-19T11:26:53.0264993Z ##[group]Setting up auth
+2026-07-19T11:26:53.0272937Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-07-19T11:26:53.0332361Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-07-19T11:26:53.0649945Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-07-19T11:26:53.0696291Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-07-19T11:26:53.0879314Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-07-19T11:26:53.0911564Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-07-19T11:26:53.1125971Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-07-19T11:26:53.1161821Z ##[endgroup]
+2026-07-19T11:26:53.1163577Z ##[group]Fetching the repository
+2026-07-19T11:26:53.1172708Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +4152b082d40cd409c0afb13bf1198f4f960998b9:refs/remotes/origin/main
+2026-07-19T11:26:53.7037156Z From https://github.com/Suraj-codes1410/ResumeRank_AI
+2026-07-19T11:26:53.7040721Z  * [new ref]         4152b082d40cd409c0afb13bf1198f4f960998b9 -> origin/main
+2026-07-19T11:26:53.7082085Z ##[endgroup]
+2026-07-19T11:26:53.7084519Z ##[group]Determining the checkout info
+2026-07-19T11:26:53.7087353Z ##[endgroup]
+2026-07-19T11:26:53.7089185Z [command]/usr/bin/git sparse-checkout disable
+2026-07-19T11:26:53.7138190Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-07-19T11:26:53.7165698Z ##[group]Checking out the ref
+2026-07-19T11:26:53.7170567Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-07-19T11:26:53.7295483Z Switched to a new branch 'main'
+2026-07-19T11:26:53.7298002Z branch 'main' set up to track 'origin/main'.
+2026-07-19T11:26:53.7305327Z ##[endgroup]
+2026-07-19T11:26:53.7349053Z [command]/usr/bin/git log -1 --format=%H
+2026-07-19T11:26:53.7370650Z 4152b082d40cd409c0afb13bf1198f4f960998b9

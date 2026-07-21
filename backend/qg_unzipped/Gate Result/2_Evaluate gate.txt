@@ -1,0 +1,10 @@
+﻿2026-07-19T11:27:00.1736802Z ##[group]Run if [ "failure" == "failure" ]; then
+2026-07-19T11:27:00.1737870Z [36;1mif [ "failure" == "failure" ]; then[0m
+2026-07-19T11:27:00.1738848Z [36;1m  echo "::error::❌ Quality Gate FAILED - fix pipeline issues before merging"[0m
+2026-07-19T11:27:00.1740048Z [36;1m  exit 1[0m
+2026-07-19T11:27:00.1740786Z [36;1mfi[0m
+2026-07-19T11:27:00.1741347Z [36;1mecho "✅ Quality Gate PASSED"[0m
+2026-07-19T11:27:00.2784912Z shell: /usr/bin/bash -e {0}
+2026-07-19T11:27:00.2785995Z ##[endgroup]
+2026-07-19T11:27:00.3146690Z ##[error]❌ Quality Gate FAILED - fix pipeline issues before merging
+2026-07-19T11:27:00.3162743Z ##[error]Process completed with exit code 1.

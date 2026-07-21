@@ -1,0 +1,256 @@
+﻿2026-07-19T08:26:45.6104001Z Current runner version: '2.335.1'
+2026-07-19T08:26:45.6126738Z ##[group]Runner Image Provisioner
+2026-07-19T08:26:45.6127537Z Hosted Compute Agent
+2026-07-19T08:26:45.6128260Z Version: 20260707.563
+2026-07-19T08:26:45.6128927Z Commit: 02667638d2b423fbc733a8e32a88b44996a3ba6e
+2026-07-19T08:26:45.6129591Z Build Date: 2026-07-07T19:33:50Z
+2026-07-19T08:26:45.6130253Z Worker ID: {dfb3acf8-b24e-48b1-b8d7-f96b49a1ae72}
+2026-07-19T08:26:45.6131027Z Azure Region: northcentralus
+2026-07-19T08:26:45.6131623Z ##[endgroup]
+2026-07-19T08:26:45.6133153Z ##[group]Operating System
+2026-07-19T08:26:45.6133805Z Ubuntu
+2026-07-19T08:26:45.6134300Z 24.04.4
+2026-07-19T08:26:45.6134895Z LTS
+2026-07-19T08:26:45.6135396Z ##[endgroup]
+2026-07-19T08:26:45.6135975Z ##[group]Runner Image
+2026-07-19T08:26:45.6136578Z Image: ubuntu-24.04
+2026-07-19T08:26:45.6137134Z Version: 20260714.240.1
+2026-07-19T08:26:45.6138651Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260714.240/images/ubuntu/Ubuntu2404-Readme.md
+2026-07-19T08:26:45.6140483Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260714.240
+2026-07-19T08:26:45.6141557Z ##[endgroup]
+2026-07-19T08:26:45.6142679Z ##[group]GITHUB_TOKEN Permissions
+2026-07-19T08:26:45.6144686Z Contents: read
+2026-07-19T08:26:45.6145267Z Metadata: read
+2026-07-19T08:26:45.6145838Z Packages: read
+2026-07-19T08:26:45.6146357Z ##[endgroup]
+2026-07-19T08:26:45.6148620Z Secret source: Actions
+2026-07-19T08:26:45.6149786Z Prepare workflow directory
+2026-07-19T08:26:45.6664132Z Prepare all required actions
+2026-07-19T08:26:45.6698886Z Getting action download info
+2026-07-19T08:26:45.8787015Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+2026-07-19T08:26:46.0105841Z Download action repository 'actions/setup-java@v4' (SHA:c1e323688fd81a25caa38c78aa6df2d33d3e20d9)
+2026-07-19T08:26:46.4190913Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-07-19T08:26:46.6243375Z Complete job name: Unit Tests
+2026-07-19T08:26:46.6896334Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-07-19T08:26:46.6905239Z ##[group]Run actions/checkout@v4
+2026-07-19T08:26:46.6905989Z with:
+2026-07-19T08:26:46.6906460Z   repository: Suraj-codes1410/ResumeRank_AI
+2026-07-19T08:26:46.6910956Z   token: ***
+2026-07-19T08:26:46.6911405Z   ssh-strict: true
+2026-07-19T08:26:46.6911839Z   ssh-user: git
+2026-07-19T08:26:46.6912284Z   persist-credentials: true
+2026-07-19T08:26:46.6912760Z   clean: true
+2026-07-19T08:26:46.6913200Z   sparse-checkout-cone-mode: true
+2026-07-19T08:26:46.6913710Z   fetch-depth: 1
+2026-07-19T08:26:46.6914135Z   fetch-tags: false
+2026-07-19T08:26:46.6914576Z   show-progress: true
+2026-07-19T08:26:46.6915033Z   lfs: false
+2026-07-19T08:26:46.6915476Z   submodules: false
+2026-07-19T08:26:46.6915917Z   set-safe-directory: true
+2026-07-19T08:26:46.6916690Z env:
+2026-07-19T08:26:46.6917103Z   JAVA_VERSION: 21
+2026-07-19T08:26:46.6917536Z   WORKING_DIR: backend
+2026-07-19T08:26:46.6917986Z ##[endgroup]
+2026-07-19T08:26:46.7901232Z Syncing repository: Suraj-codes1410/ResumeRank_AI
+2026-07-19T08:26:46.7903000Z ##[group]Getting Git version info
+2026-07-19T08:26:46.7903723Z Working directory is '/home/runner/work/ResumeRank_AI/ResumeRank_AI'
+2026-07-19T08:26:46.7904763Z [command]/usr/bin/git version
+2026-07-19T08:26:46.7958412Z git version 2.54.0
+2026-07-19T08:26:46.7990621Z ##[endgroup]
+2026-07-19T08:26:46.8001141Z Temporarily overriding HOME='/home/runner/work/_temp/b006d09f-74b1-46bd-a7d4-f957c804f8a8' before making global git config changes
+2026-07-19T08:26:46.8003812Z Adding repository directory to the temporary git global config as a safe directory
+2026-07-19T08:26:46.8006678Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ResumeRank_AI/ResumeRank_AI
+2026-07-19T08:26:46.8055041Z Deleting the contents of '/home/runner/work/ResumeRank_AI/ResumeRank_AI'
+2026-07-19T08:26:46.8059103Z ##[group]Initializing the repository
+2026-07-19T08:26:46.8063753Z [command]/usr/bin/git init /home/runner/work/ResumeRank_AI/ResumeRank_AI
+2026-07-19T08:26:46.8163238Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-07-19T08:26:46.8164993Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-07-19T08:26:46.8166719Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-07-19T08:26:46.8168240Z hint: call:
+2026-07-19T08:26:46.8169234Z hint:
+2026-07-19T08:26:46.8170253Z hint: 	git config --global init.defaultBranch <name>
+2026-07-19T08:26:46.8171403Z hint:
+2026-07-19T08:26:46.8172520Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-07-19T08:26:46.8174361Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-07-19T08:26:46.8177491Z hint:
+2026-07-19T08:26:46.8178607Z hint: 	git branch -m <name>
+2026-07-19T08:26:46.8179567Z hint:
+2026-07-19T08:26:46.8180864Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-07-19T08:26:46.8182756Z Initialized empty Git repository in /home/runner/work/ResumeRank_AI/ResumeRank_AI/.git/
+2026-07-19T08:26:46.8185528Z [command]/usr/bin/git remote add origin https://github.com/Suraj-codes1410/ResumeRank_AI
+2026-07-19T08:26:46.8225644Z ##[endgroup]
+2026-07-19T08:26:46.8227075Z ##[group]Disabling automatic garbage collection
+2026-07-19T08:26:46.8228714Z [command]/usr/bin/git config --local gc.auto 0
+2026-07-19T08:26:46.8261697Z ##[endgroup]
+2026-07-19T08:26:46.8263317Z ##[group]Setting up auth
+2026-07-19T08:26:46.8268259Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-07-19T08:26:46.8305838Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-07-19T08:26:46.9040932Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-07-19T08:26:46.9073644Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-07-19T08:26:46.9339540Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-07-19T08:26:46.9376715Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-07-19T08:26:46.9623015Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-07-19T08:26:46.9757605Z ##[endgroup]
+2026-07-19T08:26:46.9759881Z ##[group]Fetching the repository
+2026-07-19T08:26:46.9771097Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +49bbe8f987b92b6903676d6e945f80241722c146:refs/remotes/origin/main
+2026-07-19T08:26:47.5889832Z From https://github.com/Suraj-codes1410/ResumeRank_AI
+2026-07-19T08:26:47.5891867Z  * [new ref]         49bbe8f987b92b6903676d6e945f80241722c146 -> origin/main
+2026-07-19T08:26:47.5926304Z ##[endgroup]
+2026-07-19T08:26:47.5927386Z ##[group]Determining the checkout info
+2026-07-19T08:26:47.5929144Z ##[endgroup]
+2026-07-19T08:26:47.5934178Z [command]/usr/bin/git sparse-checkout disable
+2026-07-19T08:26:47.5979903Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-07-19T08:26:47.6009835Z ##[group]Checking out the ref
+2026-07-19T08:26:47.6013133Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-07-19T08:26:47.6166716Z Switched to a new branch 'main'
+2026-07-19T08:26:47.6171218Z branch 'main' set up to track 'origin/main'.
+2026-07-19T08:26:47.6177241Z ##[endgroup]
+2026-07-19T08:26:47.6227798Z [command]/usr/bin/git log -1 --format=%H
+2026-07-19T08:26:47.6255744Z 49bbe8f987b92b6903676d6e945f80241722c146
+2026-07-19T08:26:47.6749171Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-07-19T08:26:47.6756333Z ##[group]Run actions/setup-java@v4
+2026-07-19T08:26:47.6757561Z with:
+2026-07-19T08:26:47.6758710Z   distribution: temurin
+2026-07-19T08:26:47.6759777Z   java-version: 21
+2026-07-19T08:26:47.6760932Z   cache: maven
+2026-07-19T08:26:47.6762061Z   java-package: jdk
+2026-07-19T08:26:47.6763463Z   check-latest: false
+2026-07-19T08:26:47.6764712Z   server-id: github
+2026-07-19T08:26:47.6765877Z   server-username: GITHUB_ACTOR
+2026-07-19T08:26:47.6767055Z   server-password: GITHUB_TOKEN
+2026-07-19T08:26:47.6768363Z   overwrite-settings: true
+2026-07-19T08:26:47.6769465Z   job-status: success
+2026-07-19T08:26:47.6782317Z   token: ***
+2026-07-19T08:26:47.6783194Z env:
+2026-07-19T08:26:47.6784070Z   JAVA_VERSION: 21
+2026-07-19T08:26:47.6785082Z   WORKING_DIR: backend
+2026-07-19T08:26:47.6785960Z ##[endgroup]
+2026-07-19T08:26:47.8454846Z ##[group]Installed distributions
+2026-07-19T08:26:47.8661169Z Resolved Java 21.0.11+10 from tool-cache
+2026-07-19T08:26:47.8663118Z Setting Java 21.0.11+10 as the default
+2026-07-19T08:26:47.8673094Z (node:2296) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-07-19T08:26:47.8677488Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-07-19T08:26:47.8680285Z Creating toolchains.xml for JDK version 21 from temurin
+2026-07-19T08:26:47.8748703Z Writing to /home/runner/.m2/toolchains.xml
+2026-07-19T08:26:47.8749905Z 
+2026-07-19T08:26:47.8750493Z Java configuration:
+2026-07-19T08:26:47.8751975Z   Distribution: temurin
+2026-07-19T08:26:47.8753420Z   Version: 21.0.11+10
+2026-07-19T08:26:47.8755663Z   Path: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.11-10/x64
+2026-07-19T08:26:47.8757371Z 
+2026-07-19T08:26:47.8759025Z ##[endgroup]
+2026-07-19T08:26:47.8774290Z Creating settings.xml with server-id: github
+2026-07-19T08:26:47.8792713Z Writing to /home/runner/.m2/settings.xml
+2026-07-19T08:26:48.0263180Z Cache hit for: setup-java-Linux-x64-maven-c9f324753586ba2069f27b1de4d991680052bfa5ce5edaa39b02e1c3421685b9
+2026-07-19T08:26:48.0415426Z (node:2296) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-07-19T08:26:48.9601637Z Received 102662862 of 102662862 (100.0%), 119.5 MBs/sec
+2026-07-19T08:26:48.9602606Z Cache Size: ~98 MB (102662862 B)
+2026-07-19T08:26:48.9720550Z [command]/usr/bin/tar -xf /home/runner/work/_temp/6ebb2fd2-6a29-4a75-8dcd-483da7acbbf5/cache.tzst -P -C /home/runner/work/ResumeRank_AI/ResumeRank_AI --use-compress-program unzstd
+2026-07-19T08:26:49.2207133Z Cache restored successfully
+2026-07-19T08:26:49.2259971Z Cache restored from key: setup-java-Linux-x64-maven-c9f324753586ba2069f27b1de4d991680052bfa5ce5edaa39b02e1c3421685b9
+2026-07-19T08:26:49.2423806Z ##[group]Run mvn test -B -Dspring.profiles.active=test
+2026-07-19T08:26:49.2424291Z [36;1mmvn test -B -Dspring.profiles.active=test[0m
+2026-07-19T08:26:49.2510123Z shell: /usr/bin/bash -e {0}
+2026-07-19T08:26:49.2510406Z env:
+2026-07-19T08:26:49.2510598Z   JAVA_VERSION: 21
+2026-07-19T08:26:49.2510864Z   WORKING_DIR: backend
+2026-07-19T08:26:49.2511218Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.11-10/x64
+2026-07-19T08:26:49.2511738Z   JAVA_HOME_21_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.11-10/x64
+2026-07-19T08:26:49.2512137Z   SPRING_PROFILES_ACTIVE: test
+2026-07-19T08:26:49.2512400Z ##[endgroup]
+2026-07-19T08:26:54.0631941Z [INFO] Scanning for projects...
+2026-07-19T08:26:54.3279641Z [INFO] 
+2026-07-19T08:26:54.3280878Z [INFO] -----------------------< com.resumerank:backend >-----------------------
+2026-07-19T08:26:54.3284367Z [INFO] Building backend 0.0.1-SNAPSHOT
+2026-07-19T08:26:54.3285202Z [INFO]   from pom.xml
+2026-07-19T08:26:54.3288815Z [INFO] --------------------------------[ jar ]---------------------------------
+2026-07-19T08:26:54.7479889Z [INFO] 
+2026-07-19T08:26:54.7489472Z [INFO] --- resources:3.3.1:resources (default-resources) @ backend ---
+2026-07-19T08:26:54.8967517Z [INFO] Copying 1 resource from src/main/resources to target/classes
+2026-07-19T08:26:54.9088746Z [INFO] Copying 7 resources from src/main/resources to target/classes
+2026-07-19T08:26:54.9149279Z [INFO] 
+2026-07-19T08:26:54.9150422Z [INFO] --- compiler:3.13.0:compile (default-compile) @ backend ---
+2026-07-19T08:26:55.0835198Z [INFO] Recompiling the module because of changed source code.
+2026-07-19T08:26:55.0917466Z [INFO] Compiling 64 source files with javac [debug parameters release 21] to target/classes
+2026-07-19T08:26:57.4029982Z [INFO] /home/runner/work/ResumeRank_AI/ResumeRank_AI/backend/src/main/java/com/resumerank/backend/service/CandidateService.java: Some input files use unchecked or unsafe operations.
+2026-07-19T08:26:57.4064922Z [INFO] /home/runner/work/ResumeRank_AI/ResumeRank_AI/backend/src/main/java/com/resumerank/backend/service/CandidateService.java: Recompile with -Xlint:unchecked for details.
+2026-07-19T08:26:57.4088952Z [INFO] 
+2026-07-19T08:26:57.4089646Z [INFO] --- resources:3.3.1:testResources (default-testResources) @ backend ---
+2026-07-19T08:26:57.4239228Z [INFO] Copying 2 resources from src/test/resources to target/test-classes
+2026-07-19T08:26:57.4268919Z [INFO] 
+2026-07-19T08:26:57.4299492Z [INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ backend ---
+2026-07-19T08:26:57.4374247Z [INFO] Recompiling the module because of changed dependency.
+2026-07-19T08:26:57.4399011Z [INFO] Compiling 19 source files with javac [debug parameters release 21] to target/test-classes
+2026-07-19T08:26:58.2084284Z [INFO] /home/runner/work/ResumeRank_AI/ResumeRank_AI/backend/src/test/java/com/resumerank/backend/controller/AuthControllerTest.java: Some input files use unchecked or unsafe operations.
+2026-07-19T08:26:58.2115338Z [INFO] /home/runner/work/ResumeRank_AI/ResumeRank_AI/backend/src/test/java/com/resumerank/backend/controller/AuthControllerTest.java: Recompile with -Xlint:unchecked for details.
+2026-07-19T08:26:58.2117005Z [INFO] -------------------------------------------------------------
+2026-07-19T08:26:58.2117640Z [WARNING] COMPILATION WARNING : 
+2026-07-19T08:26:58.2118834Z [INFO] -------------------------------------------------------------
+2026-07-19T08:26:58.2138393Z [WARNING] /home/runner/work/ResumeRank_AI/ResumeRank_AI/backend/src/test/java/com/resumerank/backend/controller/CORSAndErrorHandlingIntegrationTest.java:[57,41] org.springframework.util.Base64Utils in org.springframework.util has been deprecated and marked for removal
+2026-07-19T08:26:58.2180402Z [WARNING] /home/runner/work/ResumeRank_AI/ResumeRank_AI/backend/src/test/java/com/resumerank/backend/controller/CORSAndErrorHandlingIntegrationTest.java:[61,41] org.springframework.util.Base64Utils in org.springframework.util has been deprecated and marked for removal
+2026-07-19T08:26:58.2192341Z [INFO] 2 warnings 
+2026-07-19T08:26:58.2192866Z [INFO] -------------------------------------------------------------
+2026-07-19T08:26:58.2193545Z [INFO] -------------------------------------------------------------
+2026-07-19T08:26:58.2194132Z [ERROR] COMPILATION ERROR : 
+2026-07-19T08:26:58.2194654Z [INFO] -------------------------------------------------------------
+2026-07-19T08:26:58.2195986Z [ERROR] /home/runner/work/ResumeRank_AI/ResumeRank_AI/backend/src/test/java/com/resumerank/backend/controller/UploadControllerTest.java:[33,2] cannot find symbol
+2026-07-19T08:26:58.2197319Z   symbol: class ActiveProfiles
+2026-07-19T08:26:58.2197734Z [INFO] 1 error
+2026-07-19T08:26:58.2198803Z [INFO] -------------------------------------------------------------
+2026-07-19T08:26:58.2199524Z [INFO] ------------------------------------------------------------------------
+2026-07-19T08:26:58.2200138Z [INFO] BUILD FAILURE
+2026-07-19T08:26:58.2200740Z [INFO] ------------------------------------------------------------------------
+2026-07-19T08:26:58.2201465Z [INFO] Total time:  4.198 s
+2026-07-19T08:26:58.2209158Z [INFO] Finished at: 2026-07-19T08:26:58Z
+2026-07-19T08:26:58.2209992Z [INFO] ------------------------------------------------------------------------
+2026-07-19T08:26:58.2211655Z [ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.13.0:testCompile (default-testCompile) on project backend: Compilation failure
+2026-07-19T08:26:58.2213839Z [ERROR] /home/runner/work/ResumeRank_AI/ResumeRank_AI/backend/src/test/java/com/resumerank/backend/controller/UploadControllerTest.java:[33,2] cannot find symbol
+2026-07-19T08:26:58.2215356Z [ERROR]   symbol: class ActiveProfiles
+2026-07-19T08:26:58.2216065Z [ERROR] -> [Help 1]
+2026-07-19T08:26:58.2216625Z [ERROR] 
+2026-07-19T08:26:58.2217374Z [ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+2026-07-19T08:26:58.2218686Z [ERROR] Re-run Maven using the -X switch to enable full debug logging.
+2026-07-19T08:26:58.2219541Z [ERROR] 
+2026-07-19T08:26:58.2220483Z [ERROR] For more information about the errors and possible solutions, please read the following articles:
+2026-07-19T08:26:58.2221850Z [ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+2026-07-19T08:26:58.2599811Z ##[error]Process completed with exit code 1.
+2026-07-19T08:26:58.2671992Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-07-19T08:26:58.2673188Z ##[group]Run actions/upload-artifact@v4
+2026-07-19T08:26:58.2673478Z with:
+2026-07-19T08:26:58.2673711Z   name: backend-unit-test-results
+2026-07-19T08:26:58.2674019Z   path: backend/target/surefire-reports/
+2026-07-19T08:26:58.2674321Z   retention-days: 7
+2026-07-19T08:26:58.2674557Z   if-no-files-found: warn
+2026-07-19T08:26:58.2674823Z   compression-level: 6
+2026-07-19T08:26:58.2675060Z   overwrite: false
+2026-07-19T08:26:58.2675289Z   include-hidden-files: false
+2026-07-19T08:26:58.2675546Z env:
+2026-07-19T08:26:58.2675746Z   JAVA_VERSION: 21
+2026-07-19T08:26:58.2675932Z   WORKING_DIR: backend
+2026-07-19T08:26:58.2676262Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.11-10/x64
+2026-07-19T08:26:58.2676717Z   JAVA_HOME_21_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.11-10/x64
+2026-07-19T08:26:58.2677066Z ##[endgroup]
+2026-07-19T08:26:58.4221067Z (node:2379) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-07-19T08:26:58.4221753Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-07-19T08:26:58.4251470Z ##[warning]No files were found with the provided path: backend/target/surefire-reports/. No artifacts will be uploaded.
+2026-07-19T08:26:58.4510501Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-07-19T08:26:58.4512703Z Post job cleanup.
+2026-07-19T08:26:58.5818603Z (node:2391) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-07-19T08:26:58.5819853Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-07-19T08:26:58.6007772Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-07-19T08:26:58.6009330Z Post job cleanup.
+2026-07-19T08:26:58.6875296Z [command]/usr/bin/git version
+2026-07-19T08:26:58.6916953Z git version 2.54.0
+2026-07-19T08:26:58.6959335Z Temporarily overriding HOME='/home/runner/work/_temp/368a7cb0-5cf8-4988-bd05-8288a7deb1dc' before making global git config changes
+2026-07-19T08:26:58.6960456Z Adding repository directory to the temporary git global config as a safe directory
+2026-07-19T08:26:58.6965141Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ResumeRank_AI/ResumeRank_AI
+2026-07-19T08:26:58.7001311Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-07-19T08:26:58.7049878Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-07-19T08:26:58.7377842Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-07-19T08:26:58.7411962Z http.https://github.com/.extraheader
+2026-07-19T08:26:58.7435832Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-07-19T08:26:58.7474384Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-07-19T08:26:58.7803177Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-07-19T08:26:58.7856914Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-07-19T08:26:58.8277352Z Cleaning up orphan processes
+2026-07-19T08:26:58.8562552Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-java@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

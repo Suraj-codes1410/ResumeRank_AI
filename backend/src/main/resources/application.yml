@@ -1,13 +1,13 @@
 server:
-  port: 8081
+  port: ${PORT:8081}
 
 spring:
   application:
     name: backend
   datasource:
-    url: jdbc:postgresql://localhost:5432/resumerank
-    username: postgres
-    password: password
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/resumerank}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:password}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -32,4 +32,3 @@ resend:
 
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
-

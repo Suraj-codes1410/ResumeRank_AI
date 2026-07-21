@@ -1,0 +1,40 @@
+﻿2026-07-19T11:27:00.0119044Z Current runner version: '2.335.1'
+2026-07-19T11:27:00.0156101Z ##[group]Runner Image Provisioner
+2026-07-19T11:27:00.0157353Z Hosted Compute Agent
+2026-07-19T11:27:00.0158444Z Version: 20260707.563
+2026-07-19T11:27:00.0159773Z Commit: 02667638d2b423fbc733a8e32a88b44996a3ba6e
+2026-07-19T11:27:00.0161030Z Build Date: 2026-07-07T19:33:50Z
+2026-07-19T11:27:00.0162096Z Worker ID: {b535a243-4be1-4d67-bcd4-c4582df3ab99}
+2026-07-19T11:27:00.0163275Z Azure Region: eastus2
+2026-07-19T11:27:00.0164178Z ##[endgroup]
+2026-07-19T11:27:00.0166342Z ##[group]Operating System
+2026-07-19T11:27:00.0167417Z Ubuntu
+2026-07-19T11:27:00.0168248Z 24.04.4
+2026-07-19T11:27:00.0169099Z LTS
+2026-07-19T11:27:00.0170125Z ##[endgroup]
+2026-07-19T11:27:00.0171051Z ##[group]Runner Image
+2026-07-19T11:27:00.0172094Z Image: ubuntu-24.04
+2026-07-19T11:27:00.0172966Z Version: 20260714.240.1
+2026-07-19T11:27:00.0175109Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260714.240/images/ubuntu/Ubuntu2404-Readme.md
+2026-07-19T11:27:00.0177716Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260714.240
+2026-07-19T11:27:00.0179302Z ##[endgroup]
+2026-07-19T11:27:00.0181522Z ##[group]GITHUB_TOKEN Permissions
+2026-07-19T11:27:00.0184265Z Contents: read
+2026-07-19T11:27:00.0185212Z Metadata: read
+2026-07-19T11:27:00.0186206Z Packages: read
+2026-07-19T11:27:00.0187045Z ##[endgroup]
+2026-07-19T11:27:00.0190292Z Secret source: Actions
+2026-07-19T11:27:00.0191470Z Prepare workflow directory
+2026-07-19T11:27:00.0658109Z Prepare all required actions
+2026-07-19T11:27:00.0791281Z Complete job name: Gate Result
+2026-07-19T11:27:00.1736834Z ##[group]Run if [ "failure" == "failure" ]; then
+2026-07-19T11:27:00.1737874Z [36;1mif [ "failure" == "failure" ]; then[0m
+2026-07-19T11:27:00.1738856Z [36;1m  echo "::error::❌ Quality Gate FAILED - fix pipeline issues before merging"[0m
+2026-07-19T11:27:00.1740055Z [36;1m  exit 1[0m
+2026-07-19T11:27:00.1740793Z [36;1mfi[0m
+2026-07-19T11:27:00.1741351Z [36;1mecho "✅ Quality Gate PASSED"[0m
+2026-07-19T11:27:00.2784956Z shell: /usr/bin/bash -e {0}
+2026-07-19T11:27:00.2786002Z ##[endgroup]
+2026-07-19T11:27:00.3146744Z ##[error]❌ Quality Gate FAILED - fix pipeline issues before merging
+2026-07-19T11:27:00.3162770Z ##[error]Process completed with exit code 1.
+2026-07-19T11:27:00.3306116Z Cleaning up orphan processes

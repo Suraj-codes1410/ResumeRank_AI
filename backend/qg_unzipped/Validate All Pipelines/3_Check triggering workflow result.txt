@@ -1,0 +1,16 @@
+﻿2026-07-19T11:26:53.7642033Z ##[group]Run echo "Workflow: Backend CI"
+2026-07-19T11:26:53.7643829Z [36;1mecho "Workflow: Backend CI"[0m
+2026-07-19T11:26:53.7645247Z [36;1mecho "Conclusion: failure"[0m
+2026-07-19T11:26:53.7646740Z [36;1mecho "Head SHA: 4152b082d40cd409c0afb13bf1198f4f960998b9"[0m
+2026-07-19T11:26:53.7648336Z [36;1mif [ "failure" != "success" ]; then[0m
+2026-07-19T11:26:53.7650929Z [36;1m  echo "::error::Workflow 'Backend CI' did not succeed (status: failure)"[0m
+2026-07-19T11:26:53.7653647Z [36;1m  exit 1[0m
+2026-07-19T11:26:53.7654763Z [36;1mfi[0m
+2026-07-19T11:26:53.7655689Z [36;1mecho "✅ Backend CI passed"[0m
+2026-07-19T11:26:53.7715785Z shell: /usr/bin/bash -e {0}
+2026-07-19T11:26:53.7716923Z ##[endgroup]
+2026-07-19T11:26:53.7810889Z Workflow: Backend CI
+2026-07-19T11:26:53.7812945Z Conclusion: failure
+2026-07-19T11:26:53.7814433Z Head SHA: 4152b082d40cd409c0afb13bf1198f4f960998b9
+2026-07-19T11:26:53.7832458Z ##[error]Workflow 'Backend CI' did not succeed (status: failure)
+2026-07-19T11:26:53.7845866Z ##[error]Process completed with exit code 1.
