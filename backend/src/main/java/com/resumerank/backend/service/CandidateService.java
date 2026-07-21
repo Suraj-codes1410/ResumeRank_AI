@@ -237,6 +237,23 @@ public class CandidateService {
             query.setParameter(entry.getKey(), entry.getValue());
         }
 
+        query.unwrap(org.hibernate.query.NativeQuery.class)
+             .addScalar("id", java.util.UUID.class)
+             .addScalar("name", String.class)
+             .addScalar("email", String.class)
+             .addScalar("resume_file_url", String.class)
+             .addScalar("resume_status", String.class)
+             .addScalar("pipeline_status", String.class)
+             .addScalar("created_at", java.time.OffsetDateTime.class)
+             .addScalar("updated_at", java.time.OffsetDateTime.class)
+             .addScalar("parse_error", String.class)
+             .addScalar("overall_score", Integer.class)
+             .addScalar("skills_score", Integer.class)
+             .addScalar("experience_score", Integer.class)
+             .addScalar("seniority_score", Integer.class)
+             .addScalar("matched_skills", String[].class)
+             .addScalar("missing_skills", String[].class);
+
         java.util.List<Object[]> resultList = query.getResultList();
         java.util.List<CandidateResponse> items = new java.util.ArrayList<>();
 
@@ -271,17 +288,22 @@ public class CandidateService {
             java.util.List<String> matchedSkills = null;
             java.util.List<String> missingSkills = null;
 
-            try {
-                java.sql.Array matchedArr = (java.sql.Array) row[13];
-                if (matchedArr != null) {
+            if (row[13] instanceof String[]) {
+                matchedSkills = java.util.Arrays.asList((String[]) row[13]);
+            } else if (row[13] != null) {
+                try {
+                    java.sql.Array matchedArr = (java.sql.Array) row[13];
                     matchedSkills = java.util.Arrays.asList((String[]) matchedArr.getArray());
-                }
-                java.sql.Array missingArr = (java.sql.Array) row[14];
-                if (missingArr != null) {
+                } catch (Exception e) {}
+            }
+
+            if (row[14] instanceof String[]) {
+                missingSkills = java.util.Arrays.asList((String[]) row[14]);
+            } else if (row[14] != null) {
+                try {
+                    java.sql.Array missingArr = (java.sql.Array) row[14];
                     missingSkills = java.util.Arrays.asList((String[]) missingArr.getArray());
-                }
-            } catch (Exception e) {
-                // Ignore conversion errors
+                } catch (Exception e) {}
             }
 
             CandidateResponse response = new CandidateResponse();
@@ -713,6 +735,18 @@ public class CandidateService {
         for (java.util.Map.Entry<String, Object> entry : params.entrySet()) {
             query.setParameter(entry.getKey(), entry.getValue());
         }
+
+        query.unwrap(org.hibernate.query.NativeQuery.class)
+             .addScalar("name", String.class)
+             .addScalar("email", String.class)
+             .addScalar("overall_score", Integer.class)
+             .addScalar("skills_score", Integer.class)
+             .addScalar("experience_score", Integer.class)
+             .addScalar("seniority_score", Integer.class)
+             .addScalar("matched_skills", String[].class)
+             .addScalar("missing_skills", String[].class)
+             .addScalar("pipeline_status", String.class)
+             .addScalar("created_at", java.time.OffsetDateTime.class);
 
         java.util.List<Object[]> resultList = query.getResultList();
 
