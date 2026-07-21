@@ -28,7 +28,7 @@ public class EmailVerificationToken {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "expires_at", nullable = false)
+    @Column(name = "expires_at", nullable = false, columnDefinition = "timestamptz")
     private OffsetDateTime expiresAt;
 
     @Column(name = "used", nullable = false)
