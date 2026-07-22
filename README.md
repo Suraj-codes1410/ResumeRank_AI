@@ -97,5 +97,25 @@ The platform is designed with a **highly scalable, multi-service, asynchronous m
 - **Automatic Migration**: Database migrations executed automatically via Flyway during startup and test runs.
 - **Dockerized Deployments**: Production-grade multi-stage Docker build configures the backend for Render container hosting.
 
+---
+
+## 💻 Tech Stack
+
+| Layer | Technology | Version | Description |
+| :--- | :--- | :--- | :--- |
+| **Frontend** | React / Next.js | 15.x | Responsive user interface, App Router, tailwindcss |
+| **Backend** | Spring Boot | 3.3.1 | Core API, security, async task execution, entity validation |
+| **AI Service** | FastAPI | 0.111.0 | Fast Python processing, document parsing, LLM orchestration |
+| **Database** | PostgreSQL | 16 | Relational storage, native arrays (`text[]`) |
+| **Migrations** | Flyway | 10 | Strict schema migration control |
+| **Security** | Spring Security | 6.x | JWT token auth, CORS filters |
+| **Storage** | Cloudinary | - | Blob store for candidate resume uploads |
+| **Emails** | Resend | - | Transactional emails (activation, password resets) |
+| **DevOps** | Docker | - | Multi-stage image build containerization |
+| **CI/CD** | GitHub Actions | - | Automated linting, test run, quality gate check |
+| **Testing** | Testcontainers | 1.20 | Spawns clean Postgres Docker containers on integration runs |
+| **Libraries** | LangChain / Uvicorn | - | Structured LLM parsing, FastAPI production server |
+
+
 
 
