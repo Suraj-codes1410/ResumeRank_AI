@@ -575,5 +575,45 @@ Branch protections are enforced globally via the `quality-gate.yml` aggregator w
   ```
 - **Coverage**: The pipeline compiles code coverage metrics automatically to `target/site/jacoco` during the verify phase.
 
+---
+
+## 🔒 Production Security
+
+1. **Authentication (JWT & Refresh Cookies)**: Short-lived access tokens (JSON output) are sent alongside long-lived refresh tokens (secured HTTP-only cookies) to prevent token theft and session hijack.
+2. **Internal API Verification**: Inter-service communication between Spring Boot and FastAPI is secured using matching `X-Internal-Token` validation headers.
+3. **Password Security**: All user login passwords are encrypted using strong `BCrypt` hashing.
+4. **Environment Variables**: Sensitive tokens, database URLs, and API keys are injected at runtime via environment variables rather than hardcoded in the codebase.
+
+---
+
+## 🚀 Performance Optimizations
+
+- **Asynchronous Task Workers**: Resume scanning and AI parsing are executed in background threads via Spring's `@Async` and FastAPI's `BackgroundTasks`, enabling immediate response times for users.
+- **Direct Cloudinary Uploads**: Frontend uploads files directly to Cloudinary using signed signature tokens. This saves server processing bandwidth and avoids massive file transit delays.
+- **Connection Pooling**: Uses HikariCP for high-performance database connection pooling.
+- **Index-Driven Pagination**: The candidate listing query uses index-backed keyset page pagination to handle huge recruiter candidate lists efficiently.
+
+---
+
+## 🗺️ Roadmap & Future Improvements
+
+- [ ] Support for multiple resumes processing concurrently on user dashboard.
+- [ ] Direct export candidate comparison graphs as PDF summaries.
+- [ ] Integration with Microsoft Outlook / Google Calendar for automated meeting scheduling.
+- [ ] Support for custom weights adjustment on scoring metrics.
+
+---
+
+## 👥 Contributors
+
+- **Suraj** - Lead Engineer & Architect - [GitHub](https://github.com/Suraj-codes1410)
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+
 
 
