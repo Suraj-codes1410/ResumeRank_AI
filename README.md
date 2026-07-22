@@ -405,9 +405,18 @@ erDiagram
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/internal/ai-webhook` | Token | Callback endpoint for FastAPI to submit resume scores |
 
+---
 
+## 🤖 AI Service Details
 
+The AI Service is implemented in Python using FastAPI, leveraging LangChain's Structured Output chains to interface with LLMs (e.g. Gemini 2.5 Flash on OpenRouter).
 
+### Python Internal API Route Spec
+- **`POST /internal/extract-text`**: Downloads document from `fileUrl`, extracts raw text based on content-type (PDF via `pypdf`, DOCX via `python-docx`), and returns JSON containing raw text content.
+- **`POST /internal/process-resume`**: Accepts candidate resume metadata, spins up a background task via FastAPI's `BackgroundTasks` queue, and immediately returns a `202 Accepted` response. The background task extracts the text, scores the resume, and posts the results back to the backend's webhook.
+- **`POST /internal/score-resume`**: Raw scoring helper that invokes the LLM chain directly using the defined `SYSTEM_PROMPT` schema constraint.
 
+### API Security & Communication Integrity
+FastAPI routes under `/internal/*` are protected using custom dependency middleware that enforces the presence of the **`X-Internal-Token`** header matching the server's `INTERNAL_SERVICE_TOKEN` environment variable.
 
-
+Similarly, when FastAPI posts results back to Spring Boot's `/api/internal/ai-webhook`, it supplies the `X-Internal-Token` header. The Spring Boot application verifies this token using standard custom filter filters to prevent spoofed score submissions.
