@@ -472,3 +472,62 @@ cd ResumeRank_AI
 | :--- | :--- | :--- | :--- |
 | `BACKEND_API_URL` | No | Override for backend API URL | `http://localhost:8081` |
 
+---
+
+## 🏃 Running Locally
+
+### 1. Database (Docker Compose)
+From the root directory, spawn a clean PostgreSQL instance:
+```bash
+docker compose up -d db
+```
+
+### 2. Backend Service (Spring Boot)
+Ensure your `.env` contains correct database connection settings, then run:
+```bash
+cd backend
+mvn spring-boot:run
+```
+The backend server starts on `http://localhost:8081`.
+
+### 3. AI Service (Python FastAPI)
+Navigate to the `aiservice` folder, initialize virtual environment, install dependencies, and launch:
+```bash
+cd aiservice
+python -m venv venv
+# On Windows:
+.\venv\Scripts\activate
+# On Linux/macOS:
+source venv/bin/activate
+
+pip install -r requirements.txt
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+The API Swagger docs are accessible at `http://localhost:8000/docs`.
+
+### 4. Frontend Application (Next.js)
+Install Node dependencies and start the development server:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Open `http://localhost:3000` in your web browser.
+
+---
+
+## 🐳 Docker Deployment
+
+The Spring Boot backend is fully dockerized for hosting platforms like Render that no longer support native Java runtimes.
+
+- **Dockerfile (`backend/Dockerfile`)**: A secure, optimized multi-stage build stage using `maven:3.9.8-eclipse-temurin-21-alpine` to compile and package, copying only the final JRE container layer to `eclipse-temurin:21-jre-alpine` for production execution.
+- **Dockerignore (`backend/.dockerignore`)**: Excludes compiler targets, local `.env` files, git configurations, and development IDE configurations to keep build contexts minimal.
+
+### Build and Run Docker Container Locally
+```bash
+cd backend
+docker build -t resumerank-backend .
+docker run -p 8081:8081 --env-file .env resumerank-backend
+```
+
+
