@@ -25,14 +25,8 @@ ResumeRank AI streamlines the hiring process by parsing candidate resumes (PDFs 
 ### Dashboard
 ![Dashboard](docs/screenshots/dashboard.png)
 
-### Candidate Upload & Parsing
-![Candidate Upload](docs/screenshots/candidate_upload.png)
-
-### Candidate Scores & Analysis
-![Candidate Scores](docs/screenshots/candidate_scores.png)
-
-### Resume Ranking
-![Resume Ranking](docs/screenshots/resume_ranking.png)
+### Parsing Analysis & Resume Ranking
+![Parsing Analysis & Resume Ranking](docs/screenshots/parsing_analysis.png)
 
 ### Email Verification
 ![Email Verification](docs/screenshots/email_verification.png)
