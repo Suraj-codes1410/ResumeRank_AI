@@ -76,4 +76,26 @@ The platform is designed with a **highly scalable, multi-service, asynchronous m
 - **BFF Proxy Signature Uploads**: Direct client-side uploads to Cloudinary storage via secure signature hashes fetched from the Backend-For-Frontend (BFF) endpoint to save server bandwidth.
 - **De-duplication**: MD5 hashing (`resume_hash`) prevents processing duplicate resumes for the same candidate posting, reducing database clutter and API costs.
 
+### 🤖 AI Processing & Scoring
+- **Automated Text Extraction**: Python microservice parses PDF/DOCX files and extracts raw text securely.
+- **Multi-Category Grading**: Deep scoring based on:
+  - **Skills Alignment**: Keyword intersection and conceptual matching of skills.
+  - **Experience Alignment**: Years of experience compared to target.
+  - **Seniority Alignment**: Seniority classification (Junior, Mid, Senior, Lead).
+  - **Overall Score**: Weighted aggregation of the categories.
+- **Matched/Missing Skills Discovery**: Extracts which required skills are matched and lists missing requirements.
+- **Suitability Summaries**: Generates a concise 1-2 sentence recruiter-facing suitability analysis for each candidate.
+
+### 💼 Job & Candidate Management
+- **Target Profiles**: Job postings contain title, description, required skills, nice-to-have skills, target experience, and seniority level.
+- **Screening Dashboard**: Recruiters can create, search, filter, and sort candidates on a responsive grid dashboard.
+- **Export CSV**: Secure native query CSV exporter handles parsing of native Postgres string arrays to write clean sheets.
+
+### 🛠️ DevOps & Infrastructure
+- **Test Separation**: Configured `maven-surefire-plugin` (unit tests) and `maven-failsafe-plugin` (integration tests) to optimize pipeline execution speed.
+- **Testcontainers integration**: Runs real PostgreSQL docker instances during integration tests to guarantee 100% database compatibility.
+- **Automatic Migration**: Database migrations executed automatically via Flyway during startup and test runs.
+- **Dockerized Deployments**: Production-grade multi-stage Docker build configures the backend for Render container hosting.
+
+
 
