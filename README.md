@@ -157,6 +157,72 @@ graph TD
     end
 ```
 The services include `CandidateService` (orchestrates resume uploads and processing), `JobPostingService` (manages job details), `AuthService` (controls signup and JWT lifecycle), and `EmailService` (handles transactional emails).
+
+### Asynchronous AI Resume Processing Pipeline
+The resume processing workflow is fully asynchronous to prevent thread-blocking on the servlet container:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Recruiter
+    participant Frontend as Next.js Frontend
+    participant Backend as Spring Boot Backend
+    participant Storage as Cloudinary CDN
+    participant AI as FastAPI AI Service
+    participant LLM as OpenRouter / Gemini
+
+    Recruiter->>Frontend: Upload candidate resume file (PDF/DOCX)
+    Frontend->>Backend: Request signed upload payload
+    Backend-->>Frontend: Return secure upload signature
+    Frontend->>Storage: POST file directly to Cloudinary
+    Storage-->>Frontend: Return public secure file URL
+    Frontend->>Backend: POST /api/candidates (Candidate info + file URL)
+    Note over Backend: Save Candidate (status: NEW)
+    Backend-->>Frontend: Return HTTP 201 Created (Candidate saved)
+    Note over Backend: Trigger processCandidateResumeAsync()
+    Backend->>AI: POST /internal/process-resume (Payload + internal auth header)
+    AI-->>Backend: Return HTTP 202 Accepted
+    Note over AI: Run uvicorn background task
+    AI->>Storage: Download file bytes
+    AI->>AI: Extract raw text from file bytes
+    AI->>LLM: Invoke structured ChatPromptChain
+    LLM-->>AI: Return JSON output (scores, matched/missing skills, summary)
+    AI->>Backend: POST /api/internal/ai-webhook (Webhook callback payload)
+    Note over Backend: Parse callback and save CandidateScore
+    Note over Backend: Update Candidate status to SCORED
+```
+
+### Recruiter Authentication Flow
+```mermaid
+graph TD
+    A[Signup] -->|Send verification email| B[Email Verification Token]
+    B -->|Click activation link| C[Verify Endpoint]
+    C -->|Activate Recruiter| D[Login]
+    D -->|Post credentials| E{Credentials Valid?}
+    E -->|No| F[401 Unauthorized]
+    E -->|Yes| G[Generate JWT Access & Refresh Tokens]
+    G -->|Set HTTP-Only Cookie| H[Refresh Token]
+    G -->|Return JSON| I[Access Token]
+```
+
+### Production Deployment Architecture
+```mermaid
+graph TB
+    subgraph Vercel
+        Frontend[Next.js App]
+    end
+    subgraph Render Private Network
+        Backend[Spring Boot Backend App<br>Dockerized Container]
+        AIService[FastAPI AI App<br>Python Web Service]
+        Database[(Managed PostgreSQL)]
+    end
+    
+    Frontend -->|REST Calls| Backend
+    Backend -->|Local Connection| Database
+    Backend -->|Internal REST| AIService
+    AIService -->|Internal Webhook| Backend
+```
+
  |
 
 
