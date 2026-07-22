@@ -279,6 +279,95 @@ ResumeRank_AI/
 └── README.md                        # Project documentation (this file)
 ```
 
+---
+
+## 🗄️ Database Schema
+
+The database consists of 7 relational tables managed by Flyway. Relational constraints and cascading delete behaviors ensure referential integrity.
+
+### Entity-Relationship Diagram
+```mermaid
+erDiagram
+    USERS {
+        uuid id PK
+        varchar email UK
+        varchar password_hash
+        boolean is_active
+        boolean email_verified
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    EMAIL_VERIFICATION_TOKENS {
+        uuid id PK
+        varchar token UK
+        uuid user_id FK
+        timestamptz expiry_date
+    }
+    PASSWORD_RESET_TOKENS {
+        uuid id PK
+        varchar token UK
+        uuid user_id FK
+        timestamptz expiry_date
+    }
+    JOB_POSTINGS {
+        uuid id PK
+        uuid user_id FK
+        text title
+        text description
+        text_array required_skills
+        text_array nice_to_have_skills
+        integer min_years_experience
+        varchar seniority_level
+        varchar status
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    CANDIDATES {
+        uuid id PK
+        uuid job_posting_id FK
+        varchar name
+        varchar email
+        varchar resume_file_url
+        varchar resume_hash
+        varchar resume_status
+        varchar pipeline_status
+        text parse_error
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    CANDIDATE_SCORES {
+        uuid id PK
+        uuid candidate_id FK, UK
+        integer overall_score
+        integer skills_score
+        integer experience_score
+        integer seniority_score
+        text_array matched_skills
+        text_array missing_skills
+        numeric years_experience_detected
+        text summary
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    CANDIDATE_STATUS_LOGS {
+        uuid id PK
+        uuid candidate_id FK
+        uuid changed_by_id FK
+        varchar from_status
+        varchar to_status
+        timestamptz created_at
+    }
+
+    USERS ||--o{ EMAIL_VERIFICATION_TOKENS : "has"
+    USERS ||--o{ PASSWORD_RESET_TOKENS : "has"
+    USERS ||--o{ JOB_POSTINGS : "creates"
+    JOB_POSTINGS ||--o{ CANDIDATES : "has"
+    CANDIDATES ||--|| CANDIDATE_SCORES : "receives"
+    CANDIDATES ||--o{ CANDIDATE_STATUS_LOGS : "logs"
+    USERS ||--o{ CANDIDATE_STATUS_LOGS : "updates"
+```
+
+
 
 
 
