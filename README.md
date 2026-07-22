@@ -367,6 +367,45 @@ erDiagram
     USERS ||--o{ CANDIDATE_STATUS_LOGS : "updates"
 ```
 
+---
+
+## 🔌 API Reference
+
+### Authentication Endpoints
+| HTTP Method | Route | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/signup` | None | Register a new recruiter account |
+| `POST` | `/api/auth/verify-email` | None | Verify recruiter email with verification token |
+| `POST` | `/api/auth/login` | None | Authenticate credentials and get JWT access/refresh tokens |
+| `POST` | `/api/auth/refresh` | None | Refresh JWT access token using Cookie refresh token |
+| `POST` | `/api/auth/reset-password/request` | None | Request password reset verification link |
+| `POST` | `/api/auth/reset-password/confirm` | None | Reset password using reset token |
+
+### Job Management Endpoints
+| HTTP Method | Route | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/job-postings` | JWT | Create a new job posting target profile |
+| `GET` | `/api/job-postings` | JWT | Get all job postings created by authenticated user |
+| `GET` | `/api/job-postings/{id}` | JWT | Get specific job posting details |
+| `PUT` | `/api/job-postings/{id}` | JWT | Update job details (title, description, skills) |
+| `DELETE` | `/api/job-postings/{id}` | JWT | Delete job posting (cascades delete candidates/scores) |
+
+### Candidate & Resume Endpoints
+| HTTP Method | Route | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/candidates` | JWT | Save a new candidate profile and trigger AI analysis |
+| `GET` | `/api/candidates` | JWT | Get candidates associated with a job posting (paginated, sorted, searched) |
+| `GET` | `/api/candidates/{id}` | JWT | Get specific candidate and scores details |
+| `PUT` | `/api/candidates/{id}/status` | JWT | Update candidate pipeline tracking status |
+| `GET` | `/api/candidates/export` | JWT | Export candidates list to a structured CSV file |
+| `POST` | `/api/uploads/signature` | JWT | Generate signed token for direct Cloudinary upload |
+
+### Internal Service Endpoints
+| HTTP Method | Route | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/internal/ai-webhook` | Token | Callback endpoint for FastAPI to submit resume scores |
+
+
 
 
 
