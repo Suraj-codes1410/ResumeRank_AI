@@ -114,7 +114,50 @@ The platform is designed with a **highly scalable, multi-service, asynchronous m
 | **DevOps** | Docker | - | Multi-stage image build containerization |
 | **CI/CD** | GitHub Actions | - | Automated linting, test run, quality gate check |
 | **Testing** | Testcontainers | 1.20 | Spawns clean Postgres Docker containers on integration runs |
-| **Libraries** | LangChain / Uvicorn | - | Structured LLM parsing, FastAPI production server |
+| **Libraries** | LangChain / Uvicorn | - | Structured LLM parsing, FastAPI production server
+
+---
+
+## 🏗️ Architecture
+
+### High-Level Service Architecture
+The system consists of three independent nodes communicating over secure channels:
+
+```mermaid
+graph LR
+    User([Recruiter / Candidate]) -->|HTTPS| Frontend[Next.js Frontend]
+    Frontend -->|REST API Proxy| Backend[Spring Boot Backend]
+    Backend -->|JDBC| DB[(PostgreSQL)]
+    Backend -->|Direct Upload Signatures| Cloudinary[Cloudinary CDN]
+    Backend -->|POST /internal/process-resume| AIService[FastAPI AI Service]
+    Backend -->|SMTP REST| Resend[Resend Email API]
+    AIService -->|LangChain HTTP| OpenRouter[OpenRouter / Gemini]
+    AIService -->|POST /api/internal/ai-webhook| Backend
+    
+    style User fill:#d5e8d4,stroke:#82b366,stroke-width:2px
+    style Frontend fill:#dae8fc,stroke:#6c8ebf,stroke-width:2px
+    style Backend fill:#ffe6cc,stroke:#d79b00,stroke-width:2px
+    style DB fill:#f5f5f5,stroke:#666666,stroke-width:2px
+    style AIService fill:#e1d5e7,stroke:#9673a6,stroke-width:2px
+```
+
+### Backend Architecture
+Inside the Spring Boot container, requests are handled via standard Layered Architecture pattern:
+
+```mermaid
+graph TD
+    Controller[REST Controllers] -->|DTOs| Service[Business Services]
+    Service -->|Entities| Repository[Spring Data JPA Repositories]
+    Repository -->|SQL| Database[(PostgreSQL)]
+    
+    subgraph Spring Boot Application
+        Controller
+        Service
+        Repository
+    end
+```
+The services include `CandidateService` (orchestrates resume uploads and processing), `JobPostingService` (manages job details), `AuthService` (controls signup and JWT lifecycle), and `EmailService` (handles transactional emails).
+ |
 
 
 
