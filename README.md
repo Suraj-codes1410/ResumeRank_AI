@@ -223,7 +223,62 @@ graph TB
     AIService -->|Internal Webhook| Backend
 ```
 
- |
+---
+
+## 📂 Folder Structure
+
+```
+ResumeRank_AI/
+├── .github/
+│   └── workflows/
+│       ├── backend-ci.yml           # Backend CI (Lint, Test, Coverage, Docker-check)
+│       └── quality-gate.yml         # Aggregated branch protection check
+├── aiservice/
+│   ├── .dockerignore
+│   ├── .env.example
+│   ├── .gitignore
+│   ├── main.py                      # FastAPI microservice entry point & LLM prompt logic
+│   ├── requirements.txt             # Python packages (langchain, fastapi, pypdf)
+│   └── test_main.py                 # FastAPI routing and extraction unit tests
+├── backend/
+│   ├── .dockerignore
+│   ├── .env.example
+│   ├── .gitignore
+│   ├── Dockerfile                   # Multi-stage Java 21 production Dockerfile
+│   ├── pom.xml                      # Maven configuration (Spring Boot, Testcontainers, JaCoCo)
+│   └── src/
+│       ├── main/
+│       │   ├── java/com/resumerank/backend/
+│       │   │   ├── config/              # Security, CORS, Rate Limiting, RestTemplate
+│       │   │   ├── controller/          # REST Endpoint Controllers (Job, Candidate, Webhook)
+│       │   │   ├── dto/                 # Request & Response Data Transfer Objects
+│       │   │   ├── entity/              # JPA Database Models (JSR-380 validation, Postgres Arrays)
+│       │   │   ├── exception/           # Exception definitions & Global Handler
+│       │   │   ├── repository/          # Spring Data JPA Repository Interfaces
+│       │   │   └── service/             # Core Business Logic (Candidate, Job, JWT, Email)
+│       │   └── resources/
+│       │       ├── db/migration/        # Flyway DB schema migration scripts
+│       │       ├── application.yml      # Base Spring Boot Configuration (secured env vars)
+│       │       └── templates/           # Thymeleaf verification & reset email templates
+│       └── test/
+│           ├── java/com/resumerank/backend/
+│           │   ├── controller/          # MockMvc Endpoint Integration Tests
+│           │   ├── service/             # Unit and mock service tests
+│           │   └── support/             # Testcontainers Postgres bootstrap helper base
+│           └── resources/
+│               └── application-test.yml # Spring active test profile configuration
+├── frontend/
+│   ├── src/
+│   │   ├── app/                     # Next.js App Router Pages and API Route Handlers
+│   │   ├── components/              # Shared UI components (tables, inputs, buttons)
+│   │   ├── context/                 # AuthContext (recruiter state & JWT refresh timer)
+│   │   └── lib/                     # Axios API clients, Cloudinary BFF upload helpers
+│   ├── package.json                 # Next.js, tailwindcss dependencies
+│   ├── tsconfig.json
+│   └── vitest.config.ts             # Vitest frontend suite configurations
+└── README.md                        # Project documentation (this file)
+```
+
 
 
 
