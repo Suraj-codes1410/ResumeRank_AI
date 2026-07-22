@@ -61,3 +61,19 @@ In high-volume recruitment, reviewing hundreds of resumes manually is slow, erro
 
 The platform is designed with a **highly scalable, multi-service, asynchronous microservices architecture** that handles background processing gracefully without locking user sessions.
 
+---
+
+## ✨ Features
+
+### 🔐 Authentication & Security
+- **Secure JWT Authentication**: JWT access and refresh token authentication pattern. Refresh tokens are secured via `HttpOnly`, `Secure`, and `SameSite` HTTP cookies to prevent XSS.
+- **Email Verification**: Sign-up triggers automated email verification tokens sent via Resend API to validate recruiter email authenticity.
+- **Recruiter Account Management**: Secure password hashing via `BCryptPasswordEncoder` and password reset flows with timed verification tokens.
+- **Granular Ownership Control**: Access control guards protect REST resources, ensuring users can only manage candidate lists and job postings they own.
+
+### 📄 Resume Management
+- **Multi-Format Processing**: Direct upload and text extraction support for standard PDF and DOCX document formats.
+- **BFF Proxy Signature Uploads**: Direct client-side uploads to Cloudinary storage via secure signature hashes fetched from the Backend-For-Frontend (BFF) endpoint to save server bandwidth.
+- **De-duplication**: MD5 hashing (`resume_hash`) prevents processing duplicate resumes for the same candidate posting, reducing database clutter and API costs.
+
+
