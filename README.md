@@ -36,3 +36,28 @@ ResumeRank AI streamlines the hiring process by parsing candidate resumes (PDFs 
 
 ### Email Verification
 ![Email Verification](docs/screenshots/email_verification.png)
+
+---
+
+## 🔗 Demo Links
+
+- **Live Web App**: [https://resume-rank-ai.vercel.app](https://resume-rank-ai.vercel.app)
+- **Backend Service URL**: [https://resumerank-ai-zdww.onrender.com](https://resumerank-ai-zdww.onrender.com)
+- **API Swagger Documentation**: [https://resumerank-ai-zdww.onrender.com/swagger-ui/index.html](https://resumerank-ai-zdww.onrender.com/swagger-ui/index.html)
+- **AI Service OpenAPI Spec**: [https://resumerank-aiservice.onrender.com/docs](https://resumerank-aiservice.onrender.com/docs)
+- **Product Demo Video**: [https://vimeo.com/resumerank-ai-demo](https://vimeo.com/resumerank-ai-demo)
+
+---
+
+## 🎯 Project Overview
+
+In high-volume recruitment, reviewing hundreds of resumes manually is slow, error-prone, and biased. Recruiters spend hours scanning documents looking for specific skills, calculating years of experience, and classifying candidates' seniority levels.
+
+**ResumeRank AI** solves this problem by automating the initial screening pipeline:
+1. **Recruiters** create a job posting with specific required skills, nice-to-have skills, and target experience.
+2. **Candidates** upload their resumes directly (PDF or DOCX format).
+3. **The platform** uses custom AI models to automatically parse the files, extract textual data, evaluate skill matching, and grade them on multiple alignment categories.
+4. **Candidates are ranked** automatically in real-time on a unified dashboard, enabling recruiters to identify top talent in seconds rather than days.
+
+The platform is designed with a **highly scalable, multi-service, asynchronous microservices architecture** that handles background processing gracefully without locking user sessions.
+
