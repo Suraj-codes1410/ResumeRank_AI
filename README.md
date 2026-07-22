@@ -420,3 +420,55 @@ The AI Service is implemented in Python using FastAPI, leveraging LangChain's St
 FastAPI routes under `/internal/*` are protected using custom dependency middleware that enforces the presence of the **`X-Internal-Token`** header matching the server's `INTERNAL_SERVICE_TOKEN` environment variable.
 
 Similarly, when FastAPI posts results back to Spring Boot's `/api/internal/ai-webhook`, it supplies the `X-Internal-Token` header. The Spring Boot application verifies this token using standard custom filter filters to prevent spoofed score submissions.
+
+---
+
+## 🚀 Installation & Configuration
+
+### Prerequisites
+- **Java JDK 21**
+- **Maven 3.9+**
+- **Python 3.10+ & pip**
+- **Node.js 18+ & npm**
+- **Docker & Docker Compose**
+
+### Step-by-Step Clone
+```bash
+git clone https://github.com/Suraj-codes1410/ResumeRank_AI.git
+cd ResumeRank_AI
+```
+
+---
+
+## 🔑 Environment Variables Reference
+
+### Backend Service (`backend/.env`)
+| Variable | Required | Description | Example |
+| :--- | :--- | :--- | :--- |
+| `SPRING_DATASOURCE_URL` | Yes | PostgreSQL connection JDBC URL | `jdbc:postgresql://localhost:5432/resumerank` |
+| `SPRING_DATASOURCE_USERNAME` | Yes | Database username | `postgres` |
+| `SPRING_DATASOURCE_PASSWORD` | Yes | Database password | `password` |
+| `JWT_SECRET` | Yes | JWT Base64 encoded key (min 256-bit) | `dGhpcy1pcy1hLXN1cGVyLXNlY3JldC...` |
+| `CLOUDINARY_CLOUD_NAME` | Yes | Cloudinary account cloud identifier | `my-cloudinary-cloud-name` |
+| `CLOUDINARY_API_KEY` | Yes | Cloudinary account API key | `123456789012345` |
+| `CLOUDINARY_API_SECRET` | Yes | Cloudinary account API secret | `abcdefghijklmnopqrstuvwxy12` |
+| `RESEND_API_KEY` | Yes | Resend API client key | `re_1234567890abcdef` |
+| `RESEND_FROM_ADDRESS` | No | Verified Resend email sender | `noreply@resumerank.ai` |
+| `FRONTEND_URL` | No | Redirect domain for verification/reset links | `http://localhost:3000` |
+| `AI_SERVICE_URL` | No | Base endpoint of FastAPI service | `http://localhost:8000` |
+| `INTERNAL_SERVICE_TOKEN` | Yes | Shared token key for internal API auth | `5ec834ec8d0b81d070cde05c9923...` |
+
+### AI Service (`aiservice/.env`)
+| Variable | Required | Description | Example |
+| :--- | :--- | :--- | :--- |
+| `INTERNAL_SERVICE_TOKEN` | Yes | Shared token key for internal API auth | `5ec834ec8d0b81d070cde05c992...` |
+| `OPENROUTER_API_KEY` | Yes | OpenRouter API authentication key | `sk-or-v1-abcdef123456...` |
+| `OPENROUTER_MODEL` | No | LLM model model name configuration | `google/gemini-2.5-flash` |
+| `SPRING_WEBHOOK_URL` | No | Callback URL pointing back to Spring Boot | `http://localhost:8081/api/internal/ai-webhook` |
+
+### Frontend (`frontend/.env.local`)
+*(Optional, defaults to proxying via `/api`)*
+| Variable | Required | Description | Example |
+| :--- | :--- | :--- | :--- |
+| `BACKEND_API_URL` | No | Override for backend API URL | `http://localhost:8081` |
+
