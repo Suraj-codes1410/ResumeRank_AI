@@ -530,4 +530,50 @@ docker build -t resumerank-backend .
 docker run -p 8081:8081 --env-file .env resumerank-backend
 ```
 
+---
+
+## 🛠️ CI/CD Pipelines
+
+Automated quality gates are managed via GitHub Actions:
+
+```
+Commit Triggered
+   │
+   ├──► Backend CI Workflow (backend-ci.yml)
+   │     ├─── Compile & Checkstyle Lint
+   │     ├─── Run Unit Tests (Surefire)
+   │     ├─── Run Integration Tests (Failsafe + Testcontainers Postgres)
+   │     ├─── Generate Coverage (JaCoCo)
+   │     └─── Validate Docker Build Context
+   │
+   └──► Frontend CI Workflow
+         ├─── Install & Lint Check
+         └─── Run Vitest suite
+```
+
+Branch protections are enforced globally via the `quality-gate.yml` aggregator workflow. Pull Requests require passing all CI checks before code merging is permitted.
+
+---
+
+## 🧪 Testing Strategy
+
+### Unit Tests
+- **Backend**: Standard Mockito/JUnit 5 unit tests for services and validators. Run via:
+  ```bash
+  mvn test
+  ```
+- **AI Service**: Fast FastAPI HTTP routing unit tests mocking OpenRouter calls. Run via:
+  ```bash
+  pytest
+  ```
+
+### Integration Tests
+- **Backend**: Integration tests check controllers and database queries in an integrated Spring Context.
+- **Testcontainers & Flyway Integration**: The backend automatically provisions a clean, ephemeral **PostgreSQL Docker container** using Testcontainers. Flyway automatically executes database migrations on this container before the tests run. This guarantees production-matching DB behavior without using mocks. Run via:
+  ```bash
+  mvn verify
+  ```
+- **Coverage**: The pipeline compiles code coverage metrics automatically to `target/site/jacoco` during the verify phase.
+
+
 
