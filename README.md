@@ -447,7 +447,7 @@ cd ResumeRank_AI
 | `CLOUDINARY_API_KEY` | Yes | Cloudinary account API key | `123456789012345` |
 | `CLOUDINARY_API_SECRET` | Yes | Cloudinary account API secret | `abcdefghijklmnopqrstuvwxy12` |
 | `RESEND_API_KEY` | Yes | Resend API client key | `re_1234567890abcdef` |
-| `RESEND_FROM_ADDRESS` | No | Verified Resend email sender | `noreply@resumerank.ai` |
+| `RESEND_FROM_ADDRESS` | No | Verified Resend email sender | `samantasuraj1410@gmail.com` |
 | `FRONTEND_URL` | No | Redirect domain for verification/reset links | `http://localhost:3000` |
 | `AI_SERVICE_URL` | No | Base endpoint of FastAPI service | `http://localhost:8000` |
 | `INTERNAL_SERVICE_TOKEN` | Yes | Shared token key for internal API auth | `5ec834ec8d0b81d070cde05c9923...` |

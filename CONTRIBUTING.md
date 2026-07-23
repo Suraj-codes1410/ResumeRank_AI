@@ -195,9 +195,9 @@ When submitting a feature request, please describe:
 
 ## 🔒 Security Policy
 
-If you discover a security vulnerability in this project, **do not open a public GitHub issue**. Instead, please report it privately via email to: `security@resumerank.ai`.
+If you discover a security vulnerability in this project, **do not open a public GitHub issue**. Instead, please report it privately via email to: `samantasuraj1410@gmail.com`.
 
 ---
 
 ## 📧 Contact
-For general inquiries or maintainer coordination, reach out to **Suraj Samanta** at `maintainers@resumerank.ai`.
+For general inquiries or maintainer coordination, reach out to **Suraj Samanta** at `samantasuraj1410@gmail.com`.
