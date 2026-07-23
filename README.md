@@ -35,11 +35,11 @@ ResumeRank AI streamlines the hiring process by parsing candidate resumes (PDFs 
 
 ## 🔗 Demo Links
 
-- **Live Web App**: [https://resume-rank-ai.vercel.app](https://resume-rank-ai-iota.vercel.app/)
+- **Live Web App**: [https://resume-rank-ai-iota.vercel.app/](https://resume-rank-ai-iota.vercel.app/)
 - **Backend Service URL**: [https://resumerank-ai-zdww.onrender.com](https://resumerank-ai-zdww.onrender.com)
 - **API Swagger Documentation**: [https://resumerank-ai-zdww.onrender.com/swagger-ui/index.html](https://resumerank-ai-zdww.onrender.com/swagger-ui/index.html)
 - **AI Service OpenAPI Spec**: [https://resumerank-aiservice.onrender.com/docs](https://resumerank-aiservice.onrender.com/docs)
-- **Product Demo Video**: [https://vimeo.com/resumerank-ai-demo](https://vimeo.com/resumerank-ai-demo)
+- **Product Demo Video**: [https://drive.google.com/file/d/1pOhYr4uerA34VnuF2C9xsJMQEn2x7CyN/view?usp=sharing](https://drive.google.com/file/d/1pOhYr4uerA34VnuF2C9xsJMQEn2x7CyN/view?usp=sharing)
 
 ---
 
