@@ -95,7 +95,9 @@ export default function ResetPasswordRequestPage() {
             className="rounded bg-brand-accent-secondary/10 border border-brand-accent-secondary/30 p-4 transition-opacity duration-300 ease-in-out"
           >
             <div className="text-sm font-medium text-brand-accent-secondary">
-              {"If an account with that email exists, we've sent a password reset link. Please check your inbox and spam folder. Delivery may take a few minutes."}
+              {
+                "If an account with that email exists, we've sent a password reset link. Please check your inbox and spam folder. Delivery may take a few minutes."
+              }
             </div>
           </div>
         )}
