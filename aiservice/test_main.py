@@ -307,7 +307,7 @@ def test_process_resume_success(
     mock_requests_post.return_value = mock_response
 
     response = client.post(
-        "/internal/process-resume",
+        "/internal/cd process-resume",
         json={
             "candidateId": "candidate-uuid-111",
             "fileUrl": "http://example.com/resume.pdf",
