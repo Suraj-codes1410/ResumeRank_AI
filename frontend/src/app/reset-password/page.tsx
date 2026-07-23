@@ -89,16 +89,23 @@ export default function ResetPasswordRequestPage() {
         </div>
 
         {mutation.isSuccess && (
-          <div className="rounded bg-brand-accent-secondary/10 border border-brand-accent-secondary/30 p-4">
+          <div
+            role="alert"
+            aria-live="polite"
+            className="rounded bg-brand-accent-secondary/10 border border-brand-accent-secondary/30 p-4 transition-opacity duration-300 ease-in-out"
+          >
             <div className="text-sm font-medium text-brand-accent-secondary">
-              If an account with that email exists, a password reset link has
-              been logged to the server console. Check the terminal!
+              If an account with that email exists, we've sent a password reset link. Please check your inbox and spam folder. Delivery may take a few minutes.
             </div>
           </div>
         )}
 
         {serverError && (
-          <div className="rounded bg-rose-950/20 border border-rose-500/30 p-4">
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="rounded bg-rose-950/20 border border-rose-500/30 p-4"
+          >
             <div className="text-sm font-medium text-rose-400">
               {serverError}
             </div>
@@ -151,31 +158,38 @@ export default function ResetPasswordRequestPage() {
             <button
               type="submit"
               disabled={mutation.isPending}
+              aria-busy={mutation.isPending}
               className="group relative w-full flex justify-center py-2.5 px-4 border border-brand-accent text-sm font-semibold rounded-lg text-brand-accent bg-transparent hover:bg-brand-accent/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg focus-visible:ring-brand-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
             >
               {mutation.isPending ? (
-                <svg
-                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-brand-accent"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-              ) : null}
-              Send reset link
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-brand-accent"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    role="img"
+                    aria-label="Loading"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Sending...
+                </>
+              ) : (
+                "Send reset link"
+              )}
             </button>
           </div>
         </form>
